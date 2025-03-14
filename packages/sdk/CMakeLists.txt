@@ -8,19 +8,19 @@ file(GLOB_RECURSE sdkInternalHeaders src/*.h)
 # Create libraries
 SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
 
-IRCPP_CONFIGURE_TARGET(${sdkTarget})
-IRCPP_CONFIGURE_TARGET(${sdkTargetStatic})
+IRSDK_CPP_CONFIGURE_TARGET(${sdkTarget})
+IRSDK_CPP_CONFIGURE_TARGET(${sdkTargetStatic})
 
 # Add dependency
-IRCPP_CONFIGURE_SDK_LIBS(${sdkTarget})
-IRCPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
+IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTarget})
+IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
 
 # Tests
 set(testTargetName ${sdkTarget}_tests)
 add_executable(${testTargetName} ${sdkTestSources})
 target_link_libraries(${testTargetName} PUBLIC
   ${sdkTargetStatic})
-ircpp_configure_test_libs(${testTargetName})
+IRSDK_CPP_configure_test_libs(${testTargetName})
 
 set(DOXYGEN_PROJECT_NAME irsdk++)
 set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/xml)

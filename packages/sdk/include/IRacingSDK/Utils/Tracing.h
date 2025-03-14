@@ -35,7 +35,7 @@ namespace IRacingSDK {
 
 TRACELOGGING_DECLARE_PROVIDER(gTraceProvider);
 
-#define IRCPP_TraceLoggingSourceLocation(loc) \
+#define IRSDK_CPP_TraceLoggingSourceLocation(loc) \
   TraceLoggingValue((loc).file_name(), "File"), \
     TraceLoggingValue((loc).line(), "Line"), \
     TraceLoggingValue((loc).function_name(), "Function")
@@ -46,40 +46,40 @@ static_assert(_MSVC_TRADITIONAL);
 //
 // - ##__VA_ARGS__             (common vendor extension)
 // + __VA_OPT__(,) __VA_ARGS__ (standard C++20)
-static_assert(!IRCPP_VA_OPT_SUPPORTED);
+static_assert(!IRSDK_CPP_VA_OPT_SUPPORTED);
 // ... but we currently depend on ##__VA_ARGS__
-static_assert(IRCPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
+static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
 
 /** Create and automatically start and stop a named activity.
  *
  * @param OKBTL_ACTIVITY the local variable to store the activity in
  * @param OKBTL_NAME the name of the activity (C string literal)
  *
- * @see IRCPP_TraceLoggingScope if you don't need the local variable
+ * @see IRSDK_CPP_TraceLoggingScope if you don't need the local variable
  *
  * This avoids templates and `auto` and generally jumps through hoops so that it
  * is valid both inside an implementation, and in a class definition.
  */
-#define IRCPP_TraceLoggingScopedActivity( \
+#define IRSDK_CPP_TraceLoggingScopedActivity( \
   OKBTL_ACTIVITY, OKBTL_NAME, ...) \
   const std::function<void(TraceLoggingThreadActivity<gTraceProvider>&)> \
-    IRCPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY) \
+    IRSDK_CPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY) \
     = [&, loc = std::source_location::current()]( \
         TraceLoggingThreadActivity<gTraceProvider>& activity) { \
         TraceLoggingWriteStart( \
           activity, \
           OKBTL_NAME, \
-          IRCPP_TraceLoggingSourceLocation(loc), \
+          IRSDK_CPP_TraceLoggingSourceLocation(loc), \
           ##__VA_ARGS__); \
       }; \
-  class IRCPP_CONCAT2(_Impl, OKBTL_ACTIVITY) final \
+  class IRSDK_CPP_CONCAT2(_Impl, OKBTL_ACTIVITY) final \
     : public TraceLoggingThreadActivity<gTraceProvider> { \
    public: \
-    IRCPP_CONCAT2(_Impl, OKBTL_ACTIVITY) \
-    (decltype(IRCPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY))& startImpl) { \
+    IRSDK_CPP_CONCAT2(_Impl, OKBTL_ACTIVITY) \
+    (decltype(IRSDK_CPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY))& startImpl) { \
       startImpl(*this); \
     } \
-    IRCPP_CONCAT2(~_Impl, OKBTL_ACTIVITY)() { \
+    IRSDK_CPP_CONCAT2(~_Impl, OKBTL_ACTIVITY)() { \
       if (mAutoStop) { \
         this->Stop(); \
       } \
@@ -87,7 +87,7 @@ static_assert(IRCPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
     void Stop() { \
       if (mStopped) [[unlikely]] { \
         OutputDebugStringW(L"Double-stopped in Stop()"); \
-        IRCPP_BREAK; \
+        IRSDK_CPP_BREAK; \
         return; \
       } \
       mStopped = true; \
@@ -105,23 +105,23 @@ static_assert(IRCPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
     void CancelAutoStop() { \
       mAutoStop = false; \
     } \
-    _IRCPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, int); \
-    _IRCPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, const char*); \
+    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, int); \
+    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, const char*); \
 \
    private: \
     bool mStopped {false}; \
     bool mAutoStop {true}; \
   }; \
-  IRCPP_CONCAT2(_Impl, OKBTL_ACTIVITY) \
-  OKBTL_ACTIVITY {IRCPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY)};
+  IRSDK_CPP_CONCAT2(_Impl, OKBTL_ACTIVITY) \
+  OKBTL_ACTIVITY {IRSDK_CPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY)};
 
 // Not using templates as they're not permitted in local classes
-#define _IRCPP_TRACELOGGING_IMPL_StopWithResult( \
+#define _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult( \
   OKBTL_NAME, OKBTL_RESULT_TYPE) \
   void StopWithResult(OKBTL_RESULT_TYPE result) { \
     if (mStopped) [[unlikely]] { \
       OutputDebugStringW(L"Double-stopped in StopWithResult()"); \
-      IRCPP_BREAK; \
+      IRSDK_CPP_BREAK; \
       return; \
     } \
     this->CancelAutoStop(); \
@@ -132,16 +132,16 @@ static_assert(IRCPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
 
 /** Create and automatically start and stop a named activity.
  *
- * Convenience wrapper around IRCPP_TraceLoggingScopedActivity
+ * Convenience wrapper around IRSDK_CPP_TraceLoggingScopedActivity
  * that generates the local variable names.
  *
  * @param OKBTL_NAME the name of the activity (C string literal)
  */
-#define IRCPP_TraceLoggingScope(OKBTL_NAME, ...) \
-  IRCPP_TraceLoggingScopedActivity( \
-    IRCPP_CONCAT2(_okbtlsa, __COUNTER__), OKBTL_NAME, ##__VA_ARGS__)
+#define IRSDK_CPP_TraceLoggingScope(OKBTL_NAME, ...) \
+  IRSDK_CPP_TraceLoggingScopedActivity( \
+    IRSDK_CPP_CONCAT2(_okbtlsa, __COUNTER__), OKBTL_NAME, ##__VA_ARGS__)
 
-#define IRCPP_TraceLoggingWrite(OKBTL_NAME, ...) \
+#define IRSDK_CPP_TraceLoggingWrite(OKBTL_NAME, ...) \
   TraceLoggingWrite( \
     gTraceProvider, \
     OKBTL_NAME, \

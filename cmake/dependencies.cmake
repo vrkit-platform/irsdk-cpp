@@ -49,14 +49,14 @@ set(ALL_SDK_DEPS
 set(DEP_GTEST_MAIN GTest::gtest_main GTest::gmock)
 set(DEP_GTEST GTest::gtest GTest::gmock)
 
-function(IRCPP_CONFIGURE_SDK_LIBS TARGET)
+function(IRSDK_CPP_CONFIGURE_SDK_LIBS TARGET)
   target_link_libraries(${TARGET} PUBLIC ${ALL_SDK_DEPS})
 endfunction()
 
-function(IRCPP_CONFIGURE_APP_LIBS TARGET)
+function(IRSDK_CPP_CONFIGURE_APP_LIBS TARGET)
   target_link_libraries(${TARGET} PRIVATE ${ALL_APP_DEPS})
 endfunction()
 
-function(IRCPP_CONFIGURE_TEST_LIBS TARGET)
+function(IRSDK_CPP_CONFIGURE_TEST_LIBS TARGET)
   target_link_libraries(${TARGET} PUBLIC ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
 endfunction()
