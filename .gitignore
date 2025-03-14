@@ -1,0 +1,27 @@
+.cache
+
+/.jupyter
+/.idea
+/.vs
+/vcpkg_installed*
+
+/tmp*
+/out
+/build
+/builds
+/logs
+
+# DATA FILES TO IGNORE (SHOULD JUST KEEP THE COMPRESSED FIXTURES, BUT THIS IS MORE EXPLICIT)
+/data/ibt
+/data/fixtures/race-recordings/*/
+*.ibt
+
+.ipynb_checkpoints
+__pycache__
+venv
+CMakeLists.txt.user
+
+/compile_commands.json
+
+.*local*
+.psenvrc

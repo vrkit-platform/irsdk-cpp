@@ -1,0 +1,112 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Configure Settings",
+      "description": "Sets build and install directories",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        },
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SPDLOG_WCHAR_SUPPORT": "1",
+        "SPDLOG_WCHAR_TO_UTF8_SUPPORT": "1",
+        "VCPKG_ROOT": "$env{VCPKG_ROOT}",
+        "VCPKG_DEFAULT_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
+        "VCPKG_TARGET_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
+        "VCPKG_CRT_LINKAGE": "static",
+        "VCPKG_LIBRARY_LINKAGE": "static",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
+      }
+    },
+    {
+      "name": "ninja-release-with-debug-info",
+      "displayName": "ninja-release-with-debug-info",
+      "description": "Sets build and install directories",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "inherits": [
+        "ninja-release"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "ninja-debug",
+      "description": "Sets build and install directories",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "inherits": [
+        "ninja-release"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ninja-debug-build",
+      "configurePreset": "ninja-debug",
+      "configuration": "Debug",
+      "targets": [
+        "irsdk++"
+      ]
+    },
+    {
+      "name": "ninja-release-with-debug-info-build",
+      "configurePreset": "ninja-release-with-debug-info",
+      "configuration": "RelWithDebInfo",
+      "targets": [
+        "irsdk++"
+      ]
+    },
+    {
+      "name": "ninja-release-build",
+      "configurePreset": "ninja-release",
+      "configuration": "Release",
+      "targets": [
+        "irsdk++"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ninja-debug-test",
+      "configurePreset": "ninja-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ninja-release-test",
+      "configurePreset": "ninja-release-with-debug-info",
+      "configuration": "RelWithDebInfo"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "ninja-release-workflow",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "ninja-release"
+        },
+        {
+          "type": "build",
+          "name": "ninja-release-build"
+        }
+      ]
+    }
+  ]
+}
