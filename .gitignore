@@ -12,9 +12,10 @@
 /logs
 
 # DATA FILES TO IGNORE (SHOULD JUST KEEP THE COMPRESSED FIXTURES, BUT THIS IS MORE EXPLICIT)
+*.ibt
 /data/ibt
 /data/fixtures/race-recordings/*/
-*.ibt
+/data/fixtures/telemetry/*.ibt
 
 .ipynb_checkpoints
 __pycache__

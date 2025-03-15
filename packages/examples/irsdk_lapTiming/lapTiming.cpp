@@ -501,8 +501,8 @@ if(hDataValidEvent)
       printf("black ");
     if (IsFlagSet(flags, FlagType::Disqualify))
       printf("disqualify ");
-    if (IsFlagSet(flags, FlagType::Servicible))
-      printf("servicible ");
+    if (IsFlagSet(flags, FlagType::Serviceable))
+      printf("serviceable ");
     if (IsFlagSet(flags, FlagType::Furled))
       printf("furled ");
     if (IsFlagSet(flags, FlagType::Repair))

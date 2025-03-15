@@ -2,7 +2,22 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../vcpkg-vrkit-platform"
 		}
 	],
-	"settings": {}
+	"settings": {},
+	"launch": {
+		"configurations": [
+			{
+				"type": "cmake",
+				"request": "launch",
+				"name": "Debug portfile(s)",
+				"cmakeDebugType": "external",
+				"pipeName": "\\\\.\\pipe\\vcpkg_ext_portfile_dbg",
+				"preLaunchTask": "Debug vcpkg commands"
+			}
+		]
+	}
 }

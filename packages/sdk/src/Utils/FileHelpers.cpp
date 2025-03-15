@@ -253,5 +253,65 @@ namespace IRacingSDK::Utils {
     return FindExeInPath(exePath.string());
   }
 
+  FileLock::FileLock(const std::string &filename) :
+      filename_(filename) {
+    // Open or create the file to lock
+    file_ = CreateFileA(
+      filename.c_str(),
+      GENERIC_READ | GENERIC_WRITE,
+      0, // Do not allow sharing the file
+      nullptr,
+      OPEN_ALWAYS,
+      FILE_ATTRIBUTE_NORMAL,
+      nullptr);
+
+    if (file_ == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error("Failed to open file for locking: " + filename);
+    }
+  }
+
+  FileLock::~FileLock() {
+    unlock(); // Ensure file is unlocked
+    if (file_ != INVALID_HANDLE_VALUE) {
+      CloseHandle(file_);
+    }
+  }
+
+  void FileLock::lock() {
+    if (locked_) {
+      return; // Already locked
+    }
+
+    OVERLAPPED overlapped = {0};
+    if (!LockFileEx(
+          file_,
+          LOCKFILE_EXCLUSIVE_LOCK,
+          0,
+          MAXDWORD,
+          MAXDWORD,
+          &overlapped)) {
+      throw std::runtime_error("Failed to lock file: " + filename_);
+    }
+
+    locked_ = true;
+  }
+
+  void FileLock::unlock() {
+    if (!locked_) {
+      return; // Not locked
+    }
+
+    OVERLAPPED overlapped = {0};
+    if (!UnlockFileEx(file_, 0, MAXDWORD, MAXDWORD, &overlapped)) {
+      throw std::runtime_error("Failed to unlock file: " + filename_);
+    }
+
+    locked_ = false;
+  }
+
+  std::string FileLock::filename() const {
+    return filename_;
+  }
+
 
 } // namespace IRacingSDK::Utils

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -35,6 +36,7 @@ namespace IRacingSDK::Utils {
   bool HasFileExtension(const std::filesystem::path &file, const std::string &ext);
   bool HasFileExtension(const std::filesystem::path &file, const std::vector<std::string> &exts);
   bool FileReadDataFully(void *buffer, std::size_t size, std::size_t count, std::FILE *stream);
+
   std::vector<std::filesystem::path> ListAllFiles(const std::vector<std::filesystem::path> &paths, bool recursive = false, const std::string &ext = "");
 
   Expected<std::vector<unsigned char>> ReadFile(const std::filesystem::path &path);
@@ -46,5 +48,27 @@ namespace IRacingSDK::Utils {
 
   Expected<std::string> FindExeInPath(const std::filesystem::path &exePath);
   Expected<std::string> FindExeInPath(const std::string &exeName);
+
+
+  class FileLock {
+  public:
+
+    explicit FileLock(const std::string &filename);
+
+    ~FileLock();
+
+    void lock();
+
+    void unlock();
+
+    std::string filename() const;
+
+  private:
+
+    const std::string filename_;
+    std::atomic_bool locked_{false};
+    HANDLE file_{INVALID_HANDLE_VALUE};
+  };
+
 
 } // namespace IRacingSDK::Utils

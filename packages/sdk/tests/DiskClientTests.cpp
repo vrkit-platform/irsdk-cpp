@@ -25,28 +25,56 @@ namespace fs = std::filesystem;
 namespace {
 
   // Formula C Lights @ montreal
-  constexpr auto IBTTestFile1 = "superformulalights324_montreal.ibt";
+  constexpr auto IBTTestFile1 = "superformulalights324_montreal";
 
   // LMP3 @ motegi
-  constexpr auto IBTTestFile2 = "ligierjsp320_twinring.ibt";
+  constexpr auto IBTTestFile2 = "ligierjsp320_twinring";
 
   constexpr auto IBTRaceRecordingTestFile1 = "f4-tsukubu";
 
+  std::filesystem::path GetTelemetryDir() {
+    return fs::current_path() / "data" / "fixtures" / "telemetry";
+  }
+
   std::filesystem::path ToIBTTestFile(const std::string &filename) {
-    return fs::current_path() / "data" / "fixtures" / "telemetry" / filename;
+    return GetTelemetryDir() / filename;
   }
 
 
   std::filesystem::path GetRaceRecordingsDir() {
     return fs::current_path() / "data" / "fixtures" / "race-recordings";
   }
+
+
   std::filesystem::path ToRaceRecordingTestFile(const std::string &raceName) {
     return GetRaceRecordingsDir() / raceName;
   }
 
-  std::shared_ptr<IRacingSDK::DiskClient> CreateDiskClient(const std::string &filename) {
-    auto file = ToIBTTestFile(filename);
-    auto client = std::make_shared<IRacingSDK::DiskClient>(file, file.string());
+  fs::path PrepareIBTTestFile(const std::string & baseFilename) {
+    auto ibtFile = ToIBTTestFile(baseFilename + ".ibt");
+    auto archiveFile = ToIBTTestFile(baseFilename + ".7z");
+
+    if (!fs::exists(ibtFile)) {
+      if (!fs::exists(archiveFile)) {
+        auto errMsg = fmt::format("IBT archive file is missing: {}", archiveFile.string());
+        ASSERT_MSG(false, errMsg.c_str());
+      }
+
+      auto cmd = fmt::format("7z x -o{} {}", GetTelemetryDir().string(), archiveFile.string());
+      int result = std::system(cmd.c_str());
+      if (result != 0) {
+        fmt::println("FAILED: Command '{}' result {}", cmd, result);
+        assert(result == 0);
+      }
+
+      ASSERT_MSG(fs::exists(ibtFile), "IBT File should exist now");
+    }
+
+    return ibtFile;
+  }
+  std::shared_ptr<IRacingSDK::DiskClient> CreateDiskClient(const std::string &baseFilename) {
+    auto ibtFile = PrepareIBTTestFile(baseFilename);
+    auto client = std::make_shared<IRacingSDK::DiskClient>(ibtFile, ibtFile.string());
     return client;
   }
 
@@ -55,7 +83,10 @@ namespace {
     auto sessionArchive = ToRaceRecordingTestFile(raceName + ".7z");
     if (!fs::is_directory(sessionDir)) {
       ASSERT_MSG(!fs::exists(sessionDir), "Session named inode is not a directory");
-      EXPECT_TRUE(fs::exists(sessionArchive)) << "Session archive file is missing: " << sessionArchive.string();
+      if (!fs::exists(sessionArchive)) {
+        auto errMsg = fmt::format("Session archive file is missing: {}", sessionArchive.string());
+        ASSERT_MSG(false, errMsg.c_str());
+      }
 
       auto cmd = fmt::format("7z x -o{} {}", GetRaceRecordingsDir().string(), sessionArchive.string());
       int result = std::system(cmd.c_str());
@@ -128,8 +159,7 @@ TEST_F(DiskClientTests, can_open) {
 
 TEST_F(DiskClientTests, aggregate_laps) {
 
-  auto file = ToIBTTestFile(IBTTestFile2);
-  //auto file = ToIBTTestFile(IBTTestFile1);
+  auto file = PrepareIBTTestFile(IBTTestFile2);
 
   DiskClientDataFrameProcessor<std::size_t> frameProc(file);
   auto client = frameProc.getClient();

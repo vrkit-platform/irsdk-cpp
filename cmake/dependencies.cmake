@@ -57,6 +57,6 @@ function(IRSDK_CPP_CONFIGURE_APP_LIBS TARGET)
   target_link_libraries(${TARGET} PRIVATE ${ALL_APP_DEPS})
 endfunction()
 
-function(IRSDK_CPP_CONFIGURE_TEST_LIBS TARGET)
+function(IRSDK_CPP_CONFIGURE_TESTS_EXE TARGET)
   target_link_libraries(${TARGET} PUBLIC ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
 endfunction()

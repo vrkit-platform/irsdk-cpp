@@ -61,9 +61,8 @@ include(cmake/hybrid_crt.cmake NO_POLICY_SCOPE)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Include test tools
-include(CTest)
+enable_testing()
 include(GoogleTest)
-
 # SDK Include dir
 set(sdkIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/include)
 

@@ -16,12 +16,12 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_TOOLCHAIN_FILE": {
           "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+          "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         },
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "SPDLOG_WCHAR_SUPPORT": "1",
         "SPDLOG_WCHAR_TO_UTF8_SUPPORT": "1",
-        "VCPKG_ROOT": "$env{VCPKG_ROOT}",
+        "VCPKG_ROOT": "${sourceDir}/vcpkg",
         "VCPKG_DEFAULT_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
         "VCPKG_TARGET_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
         "VCPKG_CRT_LINKAGE": "static",
