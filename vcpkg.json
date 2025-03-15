@@ -20,7 +20,7 @@
     },
     {
       "name": "magic-enum",
-      "version>=": "0.9.5"
+      "version>=": "0.9.7"
     },
     {
       "name": "nlohmann-json",
@@ -53,12 +53,6 @@
     {
       "name": "gtest",
       "version>=": "1.14.0"
-    }
-  ],
-  "overrides": [
-    {
-      "name": "magic-enum",
-      "version": "0.9.5"
     }
   ]
 }

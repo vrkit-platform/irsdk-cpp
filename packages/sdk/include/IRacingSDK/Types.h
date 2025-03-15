@@ -83,7 +83,7 @@
 #include <chrono>
 #include <regex>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include <IRacingSDK/Types.h>
 #include <IRacingSDK/Utils/LUT.h>

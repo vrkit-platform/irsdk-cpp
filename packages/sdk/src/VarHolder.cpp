@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 
 #include <IRacingSDK/ClientManager.h>

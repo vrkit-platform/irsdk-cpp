@@ -1,7 +1,7 @@
 #include <cstring>
 #include <mutex>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 

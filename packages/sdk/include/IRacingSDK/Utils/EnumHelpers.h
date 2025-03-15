@@ -5,7 +5,7 @@
 #pragma once
 
 #include <string>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 namespace IRacingSDK::Utils {
     template<typename E>
