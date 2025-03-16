@@ -62,7 +62,7 @@
       "configurePreset": "ninja-debug",
       "configuration": "Debug",
       "targets": [
-        "irsdk++"
+        "irsdkcpp"
       ]
     },
     {
@@ -70,7 +70,7 @@
       "configurePreset": "ninja-release-with-debug-info",
       "configuration": "RelWithDebInfo",
       "targets": [
-        "irsdk++"
+        "irsdkcpp"
       ]
     },
     {
@@ -78,7 +78,7 @@
       "configurePreset": "ninja-release",
       "configuration": "Release",
       "targets": [
-        "irsdk++"
+        "irsdkcpp"
       ]
     }
   ],

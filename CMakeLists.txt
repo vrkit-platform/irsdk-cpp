@@ -6,7 +6,7 @@ set(WINDOWS_SDK_VERSION "10.0.22621.0")
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0042 NEW)
 
-set(sdkNamePrefix irsdk++)
+set(sdkNamePrefix irsdkcpp)
 set(sdkVersionMajor 1)
 set(sdkVersionMinor 0)
 set(sdkVersionPatch 0)
@@ -18,7 +18,7 @@ if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
 endif()
 
-# IRSDK++
+# IRSDKCPP
 set(sdkTarget ${PROJECT_NAME})
 set(sdkTargetStatic ${sdkTarget}_static)
 
