@@ -6,13 +6,6 @@ macro(SETUP_TARGET_COMPILE_DEFS targetName)
   target_compile_definitions(
     ${targetName}
     PRIVATE
-    APP_NAME="${APP_NAME}"
-    APP_VERSION="${APP_VERSION}"
-  )
-
-  target_compile_definitions(
-    ${targetName}
-    PRIVATE
     $<$<CONFIG:Debug>:DEBUG>
   )
 
@@ -25,6 +18,21 @@ macro(SETUP_TARGET_COMPILE_DEFS targetName)
     SPDLOG_WCHAR_TO_UTF8_SUPPORT=1
   )
 
+endmacro()
+
+macro(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
+  if (MSVC)
+    target_compile_options(${targetName}
+      PRIVATE
+      /MP
+      $<$<CONFIG:Debug>:/MDd>
+      $<$<CONFIG:Release>:/MD>
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+    )
+  endif()
+endmacro()
+
+macro(SETUP_STATIC_TARGET_COMPILE_OPTS targetName)
   if (MSVC)
     target_compile_options(${targetName}
       PRIVATE

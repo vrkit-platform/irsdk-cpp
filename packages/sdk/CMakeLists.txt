@@ -7,6 +7,10 @@ FILE(GLOB_RECURSE sdkInternalHeaders src/*.h)
 
 # Create libraries
 SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
+SETUP_TARGET_COMPILE_DEFS(${sdkTarget})
+SETUP_TARGET_COMPILE_DEFS(${sdkTargetStatic})
+SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTarget})
+SETUP_STATIC_TARGET_COMPILE_OPTS(${sdkTargetStatic})
 
 IRSDK_CPP_CONFIGURE_TARGET(${sdkTarget})
 IRSDK_CPP_CONFIGURE_TARGET(${sdkTargetStatic})
