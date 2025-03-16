@@ -6,6 +6,7 @@ set(
   Shcore
   Shell32
   User32
+  Winmm
 )
 
 foreach(LIBRARY ${SYSTEM_LIBRARIES})

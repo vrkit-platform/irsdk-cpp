@@ -22,7 +22,7 @@ set(DEP_JSON nlohmann_json::nlohmann_json)
 set(DEP_MAGICENUM magic_enum::magic_enum)
 set(DEP_GSL Microsoft.GSL::GSL)
 set(DEP_LOG spdlog::spdlog)
-
+set(DEP_SYS_WINMM System::Winmm)
 set(DEP_FMT fmt::fmt)
 set(DEP_LOG spdlog::spdlog ${DEP_FMT})
 
@@ -36,6 +36,7 @@ set(ALL_APP_DEPS
   ${DEP_YAML}
   ${DEP_GSL}
   ${DEP_CLI_CMD}
+  ${DEP_SYS_WINMM}
 )
 
 set(ALL_SDK_DEPS
@@ -44,6 +45,7 @@ set(ALL_SDK_DEPS
   ${DEP_FMT}
   ${DEP_YAML}
   ${DEP_LOG}
+  ${DEP_SYS_WINMM}
 )
 
 set(DEP_GTEST_MAIN GTest::gtest_main GTest::gmock)

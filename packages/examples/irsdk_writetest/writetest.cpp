@@ -63,7 +63,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <IRacingSDK/Types.h>
 
 // for timeBeginPeriod
-#pragma comment(lib, "Winmm")
 
 // 16 ms timeout
 #define TIMEOUT 16

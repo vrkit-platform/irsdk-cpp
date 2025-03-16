@@ -28,8 +28,7 @@
 #include <IRacingSDK/LiveConnection.h>
 #include <IRacingSDK/VarHolder.h>
 
-// for timeBeginPeriod
-#pragma comment(lib, "Winmm")
+
 
 
 // Live weather info, may change as session progresses
