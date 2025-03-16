@@ -22,6 +22,12 @@ ENDMACRO()
 
 MACRO(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
   IF(MSVC)
+    TARGET_LINK_OPTIONS(${targetName}
+      PRIVATE
+      $<$<CONFIG:Debug>:/MDd>
+      $<$<CONFIG:Release>:/MD>
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+    )
     TARGET_COMPILE_OPTIONS(${targetName}
       PRIVATE
       /MP
@@ -34,12 +40,19 @@ ENDMACRO()
 
 MACRO(SETUP_STATIC_TARGET_COMPILE_OPTS targetName)
   IF(MSVC)
+    TARGET_LINK_OPTIONS(${targetName}
+      PRIVATE
+      $<$<CONFIG:Debug>:/MTd>
+      $<$<CONFIG:Release>:/MT>
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+    )
     TARGET_COMPILE_OPTIONS(${targetName}
       PRIVATE
       /MP
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
 #      $<$<CONFIG:Debug>:/MTd>
 #      $<$<CONFIG:Release>:/MT>
-      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+#      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
     )
   ENDIF()
 ENDMACRO()
