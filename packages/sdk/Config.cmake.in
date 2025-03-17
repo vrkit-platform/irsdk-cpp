@@ -8,10 +8,10 @@ include(CMakeFindDependencyMacro)
 # find_dependency(SomeDependency REQUIRED)
 
 # Import targets
-include("${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}Targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/irsdkcppTargets.cmake")
 
 # Provide information to the package user
-set(${PROJECT_NAME}_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include")
-set(${PROJECT_NAME}_LIBRARY_DIRS "@CMAKE_INSTALL_PREFIX@/lib")
-set(${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME}::${sdkTarget})
-set(${PROJECT_NAME}_STATIC_LIBRARIES ${PROJECT_NAME}::${sdkTargetStatic})
+set(irsdkcpp_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include")
+set(irsdkcpp_LIBRARY_DIRS "@CMAKE_INSTALL_PREFIX@/lib")
+set(irsdkcpp_LIBRARIES irsdkcpp::irsdkcpp)
+set(irsdkcpp_STATIC_LIBRARIES irsdkcpp::irsdkcpp_static)
