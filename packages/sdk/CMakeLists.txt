@@ -10,8 +10,7 @@ SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders 
 SETUP_TARGET_COMPILE_DEFS(${sdkTarget})
 SETUP_TARGET_COMPILE_DEFS(${sdkTargetStatic})
 
-#SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTarget})
-SETUP_STATIC_TARGET_COMPILE_OPTS(${sdkTarget})
+SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTarget})
 SETUP_STATIC_TARGET_COMPILE_OPTS(${sdkTargetStatic})
 #SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTargetStatic})
 

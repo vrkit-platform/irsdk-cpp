@@ -6,6 +6,7 @@ function(ADD_EXAMPLE exampleDir)
   file(GLOB headerFiles ${exampleDir}/*.h)
 
   add_executable(${exampleTarget} ${sourceFiles} ${headerFiles})
+  SETUP_STATIC_TARGET_COMPILE_OPTS(${exampleTarget})
   target_include_directories(${exampleTarget}
     BEFORE
     PRIVATE

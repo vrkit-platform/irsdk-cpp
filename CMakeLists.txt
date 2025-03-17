@@ -56,7 +56,7 @@ include(cmake/targets.cmake)
 include(cmake/fs.cmake)
 include(cmake/dependencies.cmake NO_POLICY_SCOPE)
 include(cmake/example_target.cmake)
-include(cmake/hybrid_crt.cmake NO_POLICY_SCOPE)
+# include(cmake/hybrid_crt.cmake NO_POLICY_SCOPE)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
