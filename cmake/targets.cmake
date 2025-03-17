@@ -22,8 +22,8 @@ ENDMACRO()
 
 MACRO(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
   IF(MSVC)
-    set_property(TARGET ${targetName} PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+#    set_property(TARGET ${targetName} PROPERTY
+#      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 #     TARGET_LINK_OPTIONS(${targetName}
 #       PRIVATE
 # #       $<$<CONFIG:Debug>:/MDd>
