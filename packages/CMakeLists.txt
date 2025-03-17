@@ -1,6 +1,8 @@
 
 # SDK
-add_subdirectory(sdk)
+ADD_SUBDIRECTORY(sdk)
 
 # Examples
-add_subdirectory(examples EXCLUDE_FROM_ALL)
+IF(BUILD_EXAMPLES)
+  ADD_SUBDIRECTORY(examples)
+ENDIF()

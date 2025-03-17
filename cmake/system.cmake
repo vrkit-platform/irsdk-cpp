@@ -1,11 +1,5 @@
 set(
   SYSTEM_LIBRARIES
-#  advapi32
-#  Comctl32
-#  Dbghelp
-#  Shcore
-#  Shell32
-#  User32
   Winmm
 )
 

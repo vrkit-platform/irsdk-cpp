@@ -14,9 +14,9 @@ set(sdkVersion ${sdkVersionMajor}.${sdkVersionMinor}.${sdkVersionPatch})
 
 project(${sdkNamePrefix} VERSION ${sdkVersion})
 
-if(POLICY CMP0091)
-  cmake_policy(SET CMP0091 NEW)
-endif()
+OPTION(BUILD_DOCS "Generate Doxygen Documentation" OFF)
+OPTION(BUILD_TESTS "Build tests" OFF)
+OPTION(BUILD_EXAMPLES "Build examples" OFF)
 
 # IRSDKCPP
 set(sdkTarget ${PROJECT_NAME})
@@ -28,7 +28,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # DOXYGEN
-find_package(Doxygen REQUIRED)
+if(BUILD_DOCS)
+  find_package(Doxygen REQUIRED)
+ENDIF()
 
 # CCACHE
 find_program(CCACHE_PROGRAM ccache)

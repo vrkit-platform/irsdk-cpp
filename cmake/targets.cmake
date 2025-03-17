@@ -17,34 +17,28 @@ MACRO(SETUP_TARGET_COMPILE_DEFS targetName)
     SPDLOG_WCHAR_SUPPORT=1
     SPDLOG_WCHAR_TO_UTF8_SUPPORT=1
   )
-
 ENDMACRO()
 
 MACRO(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
   IF(MSVC)
-#    set_property(TARGET ${targetName} PROPERTY
-#      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-#     TARGET_LINK_OPTIONS(${targetName}
-#       PRIVATE
-# #       $<$<CONFIG:Debug>:/MDd>
-# #       $<$<CONFIG:Release>:/MD>
-#       $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
-#     )
-#     TARGET_COMPILE_OPTIONS(${targetName}
-#       PRIVATE
-#       /MP
-#       $<$<CONFIG:Debug>:/MDd>
-# #      $<$<CONFIG:Release>:/MD>
-#       $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
-#     )
+    # set_property(TARGET ${targetName} PROPERTY
+    #   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    TARGET_LINK_OPTIONS(${targetName}
+      PRIVATE
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+    )
   ENDIF()
 ENDMACRO()
 
 MACRO(SETUP_STATIC_TARGET_COMPILE_OPTS targetName)
-#  IF(MSVC)
-#    set_property(TARGET ${targetName} PROPERTY
-#      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-#  ENDIF()
+  IF(MSVC)
+    # set_property(TARGET ${targetName} PROPERTY
+    #   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    TARGET_LINK_OPTIONS(${targetName}
+      PRIVATE
+      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+    )
+  ENDIF()
 ENDMACRO()
 
 MACRO(SETUP_LIB_EXPORTS)
@@ -79,14 +73,7 @@ MACRO(SETUP_LIB_EXPORTS)
   SET_TARGET_PROPERTIES(${staticTarget} PROPERTIES
     COMPILE_FLAGS -D${macroCompileFlag})
 
-#  CONVERT_TO_RELATIVE_PATHS(
-#    "${${libHeadersPublicVarName}}"
-#    publicHeaderFiles
-#    ${CMAKE_CURRENT_SOURCE_DIR}/include/
-#  )
   MESSAGE(NOTICE "Creating lib targets (${targets}) with source dir: ${CMAKE_CURRENT_SOURCE_DIR}")
-#  MESSAGE(NOTICE "Public Headers ABS: ${${libHeadersPublicVarName}}")
-#  MESSAGE(NOTICE "Public Headers: ${publicHeaderFiles}")
   FOREACH(target ${targets})
     TARGET_LINK_OPTIONS(${target} PRIVATE /NODEFAULTLIB:library)
     TARGET_SOURCES(
@@ -101,7 +88,7 @@ MACRO(SETUP_LIB_EXPORTS)
   ENDFOREACH()
 
   INSTALL(TARGETS ${sharedTarget}
-    EXPORT ${sharedTarget}Targets
+    EXPORT irsdkcppTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -109,7 +96,7 @@ MACRO(SETUP_LIB_EXPORTS)
   )
 
   INSTALL(TARGETS ${staticTarget}
-    EXPORT ${sharedTarget}Targets
+    EXPORT irsdkcppTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     FILE_SET publicHeaders
   )
