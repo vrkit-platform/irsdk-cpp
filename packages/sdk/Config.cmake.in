@@ -6,6 +6,38 @@ include(CMakeFindDependencyMacro)
 
 # Add dependencies (if needed)
 # find_dependency(SomeDependency REQUIRED)
+set(DEP_PACKAGES
+  Microsoft.GSL
+  fmt
+  spdlog
+  # CLI11
+  # GTest
+  yaml-cpp
+  magic_enum
+  nlohmann_json)
+
+foreach(depPkgName ${DEP_PACKAGES})
+  find_package(${depPkgName} CONFIG REQUIRED)
+endforeach()
+
+set(
+  SYSTEM_LIBRARIES
+  advapi32
+  Comctl32
+  Dbghelp
+  Shcore
+  Shell32
+  User32
+  Winmm
+)
+
+foreach(LIBRARY ${SYSTEM_LIBRARIES})
+  add_library("System::${LIBRARY}" INTERFACE IMPORTED GLOBAL)
+  set_property(
+    TARGET "System::${LIBRARY}"
+    PROPERTY IMPORTED_LIBNAME "${LIBRARY}"
+  )
+endforeach()
 
 # Import targets
 include("${CMAKE_CURRENT_LIST_DIR}/irsdkcppTargets.cmake")

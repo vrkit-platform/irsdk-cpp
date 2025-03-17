@@ -38,10 +38,10 @@ IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
 #  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Export targets for use by find_package
-install(EXPORT ${sdkTarget}Targets
-  FILE ${sdkTarget}Targets.cmake
-  NAMESPACE ${PROJECT_NAME}::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+install(EXPORT irsdkcppTargets
+  FILE irsdkcppTargets.cmake
+  NAMESPACE irsdkcpp::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
 
 # Install a cmake configuration file
 include(CMakePackageConfigHelpers)
@@ -49,29 +49,29 @@ include(CMakePackageConfigHelpers)
 # Generate and install the configuration file
 configure_package_config_file(
   ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
 
 # Generate and install the version file
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfigVersion.cmake
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY SameMajorVersion)
 
 install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfigVersion.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
 
 
 # Documentation Generation
-SET(DOXYGEN_PROJECT_NAME ${PROJECT_NAME})
+SET(DOXYGEN_PROJECT_NAME irsdkcpp)
 SET(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/xml)
 SET(DOXYGEN_RECURSIVE YES)
 SET(DOXYGEN_XML_OUTPUT YES)
 
 DOXYGEN_ADD_DOCS(
-  ${sdkTarget}_docs
+  irsdkcpp_docs
   ${CMAKE_CURRENT_LIST_DIR}/src
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
