@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../vcpkg-vrkit-platform-overlays"
+		},
+		{
+			"path": "../vcpkg"
 		}
 	],
 	"settings": {},

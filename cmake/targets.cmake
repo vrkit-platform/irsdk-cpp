@@ -41,10 +41,10 @@ MACRO(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
 ENDMACRO()
 
 MACRO(SETUP_STATIC_TARGET_COMPILE_OPTS targetName)
-  IF(MSVC)
-    set_property(TARGET ${targetName} PROPERTY
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-  ENDIF()
+#  IF(MSVC)
+#    set_property(TARGET ${targetName} PROPERTY
+#      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#  ENDIF()
 ENDMACRO()
 
 MACRO(SETUP_LIB_EXPORTS)
