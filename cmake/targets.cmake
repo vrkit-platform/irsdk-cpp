@@ -32,7 +32,7 @@ MACRO(SETUP_DYNAMIC_TARGET_COMPILE_OPTS targetName)
       PRIVATE
       /MP
       $<$<CONFIG:Debug>:/MDd>
-      $<$<CONFIG:Release>:/MD>
+#      $<$<CONFIG:Release>:/MD>
       $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
     )
   ENDIF()
@@ -51,7 +51,7 @@ MACRO(SETUP_STATIC_TARGET_COMPILE_OPTS targetName)
       /MP
       $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
       $<$<CONFIG:Debug>:/MTd>
-      $<$<CONFIG:Release>:/MT>
+#      $<$<CONFIG:Release>:/MT>
 #      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
     )
   ENDIF()
