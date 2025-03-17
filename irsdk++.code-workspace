@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "../vcpkg-vrkit-platform"
+		},
+		{
+			"path": "../vcpkg-vrkit-platform-examples"
+		},
+		{
+			"path": "../vcpkg-vrkit-platform-overlays"
 		}
 	],
 	"settings": {},
