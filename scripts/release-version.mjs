@@ -25,7 +25,7 @@ echo`irsdkcpp version v${pkgVersion} - Releasing`
 
 async function checkReleaseDraftValid() {
   echo`Checking Github Draft Release v${pkgVersion} exists`
-  const releaseInfoOutput = await $`gh release list --json "name,isDraft,tagName" -q '[.[] | select(.name == "${pkgVersion}")]'`,
+  const releaseInfoOutput = await $`gh release list --json "name,isDraft,tagName" -q '[.[] | select(.name == "${versionTag}")]'`,
     releaseInfoJsonStr = releaseInfoOutput.stdout,
     releaseInfoJson = JSON.parse(releaseInfoJsonStr)
   
