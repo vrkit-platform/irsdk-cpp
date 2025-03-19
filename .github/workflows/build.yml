@@ -32,7 +32,7 @@ jobs:
     env:
       # Path to the solution file relative to the root of the project.
       VCPKG_DEFAULT_TRIPLET: ${{ matrix.triplet }}
-      VCPKG_ROOT: "C:/vcpkg"
+      VCPKG_ROOT: "${{ github.workspace }}/vcpkg"
       VCPKG_DEFAULT_BINARY_CACHE: "C:/vcpkg_installed"
       VCPKG_MAX_CONCURRENCY: 4
 
@@ -52,6 +52,8 @@ jobs:
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
 
       - name: Create cache directory
         run: mkdir "${{ env.CHOCO_CACHE }}"
