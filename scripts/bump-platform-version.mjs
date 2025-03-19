@@ -40,7 +40,7 @@ async function updatePackageJson() {
 }
 
 async function updateCMakeVersion() {
-  echo`Updating CMake version`
+  echo`Updating CMake version (${currentCMakeVersion} -> ${newVersion})`
   
   Fsx.writeFileSync(cmakeVersionFile, newVersion)
   
