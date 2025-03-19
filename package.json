@@ -1,0 +1,23 @@
+{
+  "name": "irsdkcpp",
+  "version": "1.0.1",
+  "description": "iRacing SDK C++ wrapper",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vrkit-platform/irsdk-cpp.git"
+  },
+  "author": {
+    "email": "support@vrkit-platform.com",
+    "name": "Jonathan Glanz",
+    "url": "https://github.com/jglanz"
+  },
+  "license": "MIT",
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@3fv/prelude-ts": "^0.8.37",
+    "@types/node": "^22.13.10",
+    "semver": "^7.7.1",
+    "zx": "^8.4.1"
+  }
+}

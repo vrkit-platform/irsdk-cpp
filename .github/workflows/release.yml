@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: pwsh
+
+    name: "irsdkcpp-release"
+    environment: build
+    runs-on: [ "windows-latest" ]
+    concurrency:
+      cancel-in-progress: false
+      group: "irsdkcpp-release"
+
+    env: {}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "master"
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 'Rebase w/o push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{github.workspace}}
+        run: |
+          set -e
+          
+          echo "Make sure we are tracking"          
+          git branch --set-upstream-to=origin/master master
+          
+          echo "Pulling latest 'master'"
+          git pull          
+          
+          echo "Resetting on 'master'"
+          git reset --hard
+          
+          echo "Checking out develop"
+          git checkout --track origin/develop
+          
+          echo "Resetting on develop"
+          git reset --hard
+          
+          echo "Checking out master"
+          git checkout master
+          
+          echo "Resetting on master"
+          git reset --hard
+          
+          echo "Rebase 'master' onto 'develop'"
+          git rebase develop
+          echo "Rebased 'master' onto 'develop'"
+
+      - name: Use Node v22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        working-directory: ${{github.workspace}}
+        run: |
+          yarn install
+
+      - name: 'Release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{github.workspace}}/scripts
+        run: |
+          set -e
+          node release-version.mjs

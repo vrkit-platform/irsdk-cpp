@@ -5,6 +5,9 @@
 /.vs
 /vcpkg_installed*
 
+node_modules
+yarn.lock
+
 /tmp*
 /out
 /build

@@ -1,73 +1,86 @@
-cmake_minimum_required(VERSION 3.21.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.21.1)
 
 # Windows SDK/Kit
-set(WINDOWS_SDK_VERSION "10.0.22621.0")
+SET(WINDOWS_SDK_VERSION "10.0.22621.0")
 
-cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0042 NEW)
+CMAKE_POLICY(SET CMP0091 NEW)
+CMAKE_POLICY(SET CMP0042 NEW)
 
-set(sdkNamePrefix irsdkcpp)
-set(sdkVersionMajor 1)
-set(sdkVersionMinor 0)
-set(sdkVersionPatch 0)
-set(sdkVersion ${sdkVersionMajor}.${sdkVersionMinor}.${sdkVersionPatch})
+SET(sdkNamePrefix irsdkcpp)
 
-project(${sdkNamePrefix} VERSION ${sdkVersion})
+# Read version number from a file
+SET(VERSION_FILE ${CMAKE_SOURCE_DIR}/version.txt)
+
+IF(EXISTS ${VERSION_FILE})
+  FILE(READ ${VERSION_FILE} sdkVersion)
+  STRING(STRIP ${sdkVersion} sdkVersion) # Strip any excess whitespaces or newlines
+  MESSAGE(STATUS "SDK Version read from file: ${sdkVersion}")
+ELSE()
+  MESSAGE(FATAL_ERROR "Version file not found: ${VERSION_FILE}")
+ENDIF()
+
+# Parse version into major, minor, and patch
+STRING(REPLACE "." ";" version_parts ${sdkVersion})
+LIST(GET version_parts 0 sdkVersionMajor)
+LIST(GET version_parts 1 sdkVersionMinor)
+LIST(GET version_parts 2 sdkVersionPatch)
+
+PROJECT(${sdkNamePrefix} VERSION ${sdkVersion})
 
 OPTION(BUILD_DOCS "Generate Doxygen Documentation" OFF)
 OPTION(BUILD_TESTS "Build tests" OFF)
 OPTION(BUILD_EXAMPLES "Build examples" OFF)
 
 # IRSDKCPP
-set(sdkTarget ${PROJECT_NAME})
-set(sdkTargetStatic ${sdkTarget}_static)
+SET(sdkTarget ${PROJECT_NAME})
+SET(sdkTargetStatic ${sdkTarget}_static)
 
 # Setup
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+SET(CMAKE_CXX_STANDARD 23)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # DOXYGEN
-if(BUILD_DOCS)
-  find_package(Doxygen REQUIRED)
+IF(BUILD_DOCS)
+  FIND_PACKAGE(Doxygen REQUIRED)
 ENDIF()
 
 # CCACHE
-find_program(CCACHE_PROGRAM ccache)
-if (NOT CCACHE_PROGRAM)
-  find_program(CCACHE_PROGRAM ccache PATHS "$ENV{HOME}\\AppData\\Local\\Microsoft\\WinGet\\Links")
-endif()
+FIND_PROGRAM(CCACHE_PROGRAM ccache)
+IF(NOT CCACHE_PROGRAM)
+  FIND_PROGRAM(CCACHE_PROGRAM ccache PATHS "$ENV{HOME}\\AppData\\Local\\Microsoft\\WinGet\\Links")
+ENDIF()
 
-if (CCACHE_PROGRAM)
-  message(NOTICE "Selected CCache: ${CCACHE_PROGRAM}")
-  set(CCACHE_CMDLINE ${CCACHE_PROGRAM} base_dir=${PROJECT_SOURCE_DIR} hash_dir=false log_file=${PROJECT_SOURCE_DIR}/tmp_ccache.log)
-  set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_CMDLINE})
-  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_CMDLINE})
-else ()
-  message(WARNING "Could not find ccache, skipping!")
-endif ()
+IF(CCACHE_PROGRAM)
+  MESSAGE(NOTICE "Selected CCache: ${CCACHE_PROGRAM}")
+  SET(CCACHE_CMDLINE ${CCACHE_PROGRAM} base_dir=${PROJECT_SOURCE_DIR} hash_dir=false log_file=${PROJECT_SOURCE_DIR}/tmp_ccache.log)
+  SET(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_CMDLINE})
+  SET(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_CMDLINE})
+ELSE()
+  MESSAGE(WARNING "Could not find ccache, skipping!")
+ENDIF()
 
-set(CMAKE_CXX_VISIBILITY_PRESET visible)
+SET(CMAKE_CXX_VISIBILITY_PRESET visible)
 
 # Add WCHAR def for `spdlog` header inclusion
-add_compile_definitions(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_SUPPORT SPDLOG_NO_EXCEPTIONS)
+ADD_COMPILE_DEFINITIONS(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_SUPPORT SPDLOG_NO_EXCEPTIONS)
 
 # Include CMake helper libs
-include(cmake/system.cmake)
-include(cmake/targets.cmake)
-include(cmake/fs.cmake)
-include(cmake/dependencies.cmake NO_POLICY_SCOPE)
-include(cmake/example_target.cmake)
+INCLUDE(cmake/system.cmake)
+INCLUDE(cmake/targets.cmake)
+INCLUDE(cmake/fs.cmake)
+INCLUDE(cmake/dependencies.cmake NO_POLICY_SCOPE)
+INCLUDE(cmake/example_target.cmake)
 # include(cmake/hybrid_crt.cmake NO_POLICY_SCOPE)
 
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Include test tools
-enable_testing()
-include(GoogleTest)
+ENABLE_TESTING()
+INCLUDE(GoogleTest)
 # SDK Include dir
-set(sdkIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/include)
+SET(sdkIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/include)
 
-add_subdirectory(packages)
+ADD_SUBDIRECTORY(packages)
 
 
