@@ -95,13 +95,13 @@ jobs:
       - name: 'CMake Configure'
         uses: lukka/run-cmake@v10
         with:
-          configurePreset: 'ninja'
+          configurePreset: 'ninja-release'
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
 
       - name: 'CMake Build'
         uses: lukka/run-cmake@v10
         with:
-          buildPreset: 'ninja-release'
+          buildPreset: 'ninja-release-build'
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
 
 
