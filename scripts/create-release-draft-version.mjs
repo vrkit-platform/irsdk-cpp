@@ -24,17 +24,18 @@ echo`irsdkcpp version v${pkgVersion} - Create/Update release draft`
 
 async function updateReleaseDraft() {
   echo`Checking Github Draft Release v${pkgVersion} exists`
-  const releaseInfoOutput = await $`gh release list --json "name,isDraft,tagName" -q '[.[] | select(.name == "${pkgVersion}")]'`,
+  const releaseInfoOutput = await $`gh release list --json "name,isDraft,tagName" -q '[.[] | select(.name == "${versionTag}")]'`,
     releaseInfoJsonStr = releaseInfoOutput.stdout,
     releaseInfoJson = JSON.parse(releaseInfoJsonStr)
   
-  const isDraft = releaseInfoJson?.[0]?.isDraft === true
+  const isDraft = releaseInfoJson?.[0]?.isDraft === true,
+    relArgs = `${versionTag} --title ${versionTag} --draft --target=develop`.split(" ")
   if (isDraft) {
     echo`Updating Release Draft Info for ${versionTag}`
-    await $`gh release edit ${versionTag} --draft --target=develop`
+    await $`gh release edit ${relArgs} --tag ${versionTag}`
   } else {
     echo`Creating Release Draft Info for ${versionTag}`
-    await $`gh release create ${versionTag} --draft --target=develop`
+    await $`gh release create ${relArgs} --generate-notes`
   }
 }
 
