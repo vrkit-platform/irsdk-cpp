@@ -53,26 +53,31 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: 'recursive'
+          fetch-depth: '0'
 
-      - name: Create cache directory
-        run: mkdir "${{ env.CHOCO_CACHE }}"
+      - name: VCPKG fetch
+        run: |
+          cd ${{ env.VCPKG_ROOT }}
+          git fetch --all
 
-      - name: Cache Tools
-        uses: actions/cache@v4
-        with:
-          path: |
-            "${{ env.CHOCO_CACHE }}"
-            "C:/Program Files/doxygen/bin"
-          key: choco-${{ matrix.os }}
-
-
-      - name: Set Choco cache path
-        run: choco config set cacheLocation "${{ env.CHOCO_CACHE }}"
-
-      - name: Install doxygen
-        run: choco install doxygen.install
-
+#      - name: Create cache directory
+#        run: mkdir "${{ env.CHOCO_CACHE }}"
+#
+#      - name: Cache Tools
+#        uses: actions/cache@v4
+#        with:
+#          path: |
+#            "${{ env.CHOCO_CACHE }}"
+#            "C:/Program Files/doxygen/bin"
+#          key: choco-${{ matrix.os }}
+#
+#
+#      - name: Set Choco cache path
+#        run: choco config set cacheLocation "${{ env.CHOCO_CACHE }}"
+#
+#      - name: Install doxygen
+#        run: choco install doxygen.install
 
       - name: get-cmake
         uses: lukka/get-cmake@v3.31.5
