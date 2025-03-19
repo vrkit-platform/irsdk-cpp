@@ -22,10 +22,6 @@
         "SPDLOG_WCHAR_SUPPORT": "1",
         "SPDLOG_WCHAR_TO_UTF8_SUPPORT": "1",
         "VCPKG_ROOT": "${sourceDir}/vcpkg",
-        "VCPKG_DEFAULT_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
-        "VCPKG_TARGET_TRIPLET": "$env{VCPKG_DEFAULT_TRIPLET}",
-        "VCPKG_CRT_LINKAGE": "static",
-        "VCPKG_LIBRARY_LINKAGE": "static",
         "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
       }
     },

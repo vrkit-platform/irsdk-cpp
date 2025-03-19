@@ -27,7 +27,7 @@ jobs:
         os: [  windows-latest ]
         include:
           - os: windows-latest
-            triplet: x64-windows-static
+#            triplet: x64-windows-static
             vcpkgCommitId: '47bf3d1ac192b3fa0feb6e6ac9c845de179eebe9'
     env:
       # Path to the solution file relative to the root of the project.
