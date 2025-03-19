@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // noinspection JSCheckFunctionSignatures,JSUnresolvedReference
 // noinspection JSCheckFunctionSignatures
-
+import assert from "node:assert/strict"
 import { $, cd, echo, fs as Fsx, path as Path } from "zx"
 import { fatalError } from "./common/process-helpers.mjs"
 import { rootDir } from "./common/workflow-global.mjs"
@@ -28,8 +28,12 @@ async function updateReleaseDraft() {
     releaseInfoJsonStr = releaseInfoOutput.stdout,
     releaseInfoJson = JSON.parse(releaseInfoJsonStr)
   
-  const isDraft = releaseInfoJson?.[0]?.isDraft === true,
+  const
+    relFound = (releaseInfoJson?.length ?? 0) > 0,
+    isDraft = releaseInfoJson?.[0]?.isDraft === true,
     relArgs = `${versionTag} --title ${versionTag} --draft --target=develop`.split(" ")
+  
+  assert(!relFound || isDraft, `Only draft releases can be updated`)
   if (isDraft) {
     echo`Updating Release Draft Info for ${versionTag}`
     await $`gh release edit ${relArgs} --tag ${versionTag}`
