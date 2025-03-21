@@ -19,10 +19,13 @@
           "value": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
         },
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "SPDLOG_WCHAR_SUPPORT": "1",
-        "SPDLOG_WCHAR_TO_UTF8_SUPPORT": "1",
         "VCPKG_ROOT": "${sourceDir}/vcpkg",
-        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported"
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+        "BUILD_EXAMPLES": "OFF",
+        "BUILD_DOCS": "OFF",
+        "BUILD_TESTS": "OFF",
+        "IRSDKCPP_BUILD_SHARED": "ON",
+        "IRSDKCPP_BUILD_STATIC": "ON"
       }
     },
     {
@@ -56,26 +59,18 @@
     {
       "name": "ninja-debug-build",
       "configurePreset": "ninja-debug",
-      "configuration": "Debug",
-      "targets": [
-        "irsdkcpp"
-      ]
+      "configuration": "Debug"
+      
     },
     {
       "name": "ninja-release-with-debug-info-build",
       "configurePreset": "ninja-release-with-debug-info",
-      "configuration": "RelWithDebInfo",
-      "targets": [
-        "irsdkcpp"
-      ]
+      "configuration": "RelWithDebInfo"
     },
     {
       "name": "ninja-release-build",
       "configurePreset": "ninja-release",
-      "configuration": "Release",
-      "targets": [
-        "irsdkcpp"
-      ]
+      "configuration": "Release"
     }
   ],
   "testPresets": [
