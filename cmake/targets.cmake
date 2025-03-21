@@ -3,15 +3,15 @@ INCLUDE(GNUInstallDirs)
 INCLUDE(CMakeParseArguments)
 
 MACRO(SETUP_TARGET_COMPILE_DEFS targetName)
-#  IF(MSVC)
-#    TARGET_LINK_OPTIONS(${targetName}
-#      PRIVATE
-##      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
-#      /NODEFAULTLIB:ucrt$<$<CONFIG:Debug>:d>.lib # include the dynamic UCRT
-#      /NODEFAULTLIB:libucrt$<$<CONFIG:Debug>:d>.lib # ignore the static UCRT
-#
-#    )
-#  ENDIF()
+  #  IF(MSVC)
+  #    TARGET_LINK_OPTIONS(${targetName}
+  #      PRIVATE
+  ##      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+  #      /NODEFAULTLIB:ucrt$<$<CONFIG:Debug>:d>.lib # include the dynamic UCRT
+  #      /NODEFAULTLIB:libucrt$<$<CONFIG:Debug>:d>.lib # ignore the static UCRT
+  #
+  #    )
+  #  ENDIF()
 
   TARGET_COMPILE_DEFINITIONS(
     ${targetName}
@@ -66,14 +66,6 @@ MACRO(SETUP_LIB_EXPORTS)
       ${${libHeadersPublicVarName}}
     )
 
-    INSTALL(TARGETS ${sharedTarget}
-      EXPORT irsdkcppTargets
-      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-      FILE_SET publicHeaders
-    )
-
   ENDIF()
 
   IF(IRSDKCPP_BUILD_STATIC)
@@ -81,7 +73,7 @@ MACRO(SETUP_LIB_EXPORTS)
     GENERATE_EXPORT_HEADER(${staticTarget} BASE_NAME ${macroBaseName})
     SET_TARGET_PROPERTIES(${staticTarget} PROPERTIES
       COMPILE_FLAGS -D${macroCompileFlag})
-    target_link_options(${staticTarget} PRIVATE /NODEFAULTLIB:msvcrt$<$<CONFIG:Debug>:d>.lib)
+    TARGET_LINK_OPTIONS(${staticTarget} PRIVATE /NODEFAULTLIB:msvcrt$<$<CONFIG:Debug>:d>.lib)
     TARGET_SOURCES(
       ${staticTarget}
       PUBLIC
@@ -92,9 +84,28 @@ MACRO(SETUP_LIB_EXPORTS)
       ${${libHeadersPublicVarName}}
     )
 
+  ENDIF()
+
+  IF(IRSDKCPP_BUILD_SHARED)
+    IF(IRSDKCPP_BUILD_STATIC)
+      SET_TARGET_PROPERTIES(${staticTarget} PROPERTIES EXCLUDE_FROM_ALL 1)
+    ENDIF()
+    INSTALL(TARGETS ${sharedTarget}
+      EXPORT irsdkcppTargets
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      FILE_SET publicHeaders
+    )
+  ELSEIF(IRSDKCPP_BUILD_STATIC)
+    IF(IRSDKCPP_BUILD_SHARED)
+      SET_TARGET_PROPERTIES(${sharedTarget} PROPERTIES EXCLUDE_FROM_ALL 1)
+    ENDIF()
     INSTALL(TARGETS ${staticTarget}
       EXPORT irsdkcppTargets
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
       FILE_SET publicHeaders
     )
   ENDIF()
@@ -112,6 +123,5 @@ ENDFUNCTION()
 
 FUNCTION(IRSDK_CPP_CONFIGURE_TARGET TARGET)
   SETUP_TARGET_COMPILE_DEFS(${TARGET})
-
 
 ENDFUNCTION()
