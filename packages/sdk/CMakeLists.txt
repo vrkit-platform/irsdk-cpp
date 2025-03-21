@@ -75,6 +75,7 @@ IF(BUILD_TESTS)
     GTEST_ADD_TESTS(
       TARGET ${testTargetName}
       SOURCES ${sdkTestSources}
+      TEST_PREFIX static
     )
   ENDIF()
 
@@ -89,6 +90,7 @@ IF(BUILD_TESTS)
     GTEST_ADD_TESTS(
       TARGET ${testTargetName}
       SOURCES ${sdkTestSources}
+      TEST_PREFIX shared
     )
   ENDIF()
 
