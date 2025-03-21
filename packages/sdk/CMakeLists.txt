@@ -22,7 +22,7 @@ ENDIF()
 INSTALL(EXPORT irsdkcppTargets
   FILE irsdkcppTargets.cmake
   NAMESPACE irsdkcpp::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
+  DESTINATION share/irsdkcpp)
 
 # Install a cmake configuration file
 INCLUDE(CMakePackageConfigHelpers)
@@ -31,7 +31,7 @@ INCLUDE(CMakePackageConfigHelpers)
 CONFIGURE_PACKAGE_CONFIG_FILE(
   ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
+  INSTALL_DESTINATION share/irsdkcpp)
 
 # Generate and install the version file
 WRITE_BASIC_PACKAGE_VERSION_FILE(
@@ -42,7 +42,7 @@ WRITE_BASIC_PACKAGE_VERSION_FILE(
 INSTALL(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/irsdkcpp)
+  DESTINATION share/irsdkcpp)
 
 # Documentation Generation
 IF(BUILD_DOCS)
