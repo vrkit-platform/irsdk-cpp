@@ -48,7 +48,7 @@ set(ALL_SDK_DEPS
   ${DEP_SYS_WINMM}
 )
 
-set(DEP_GTEST_MAIN GTest::gtest_main GTest::gmock)
+set(DEP_GTEST_MAIN GTest::gtest GTest::gtest_main GTest::gmock)
 set(DEP_GTEST GTest::gtest GTest::gmock)
 
 function(IRSDK_CPP_CONFIGURE_SDK_LIBS TARGET)
@@ -60,5 +60,14 @@ function(IRSDK_CPP_CONFIGURE_APP_LIBS TARGET)
 endfunction()
 
 function(IRSDK_CPP_CONFIGURE_TESTS_EXE TARGET)
-  target_link_libraries(${TARGET} PUBLIC ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
+  target_link_libraries(${TARGET} ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
+#
+#  if (MSVC)
+#    target_compile_options(${TARGET}
+#      PRIVATE
+#      $<$<CONFIG:Debug>:/MTd>
+#      $<$<CONFIG:Release>:/MT>
+#      $<$<CONFIG:Debug>:/DEBUG:FASTLINK>
+#    )
+#  endif()
 endfunction()

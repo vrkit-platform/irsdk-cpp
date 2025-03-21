@@ -30,6 +30,16 @@ PROJECT(${sdkNamePrefix} VERSION ${sdkVersion})
 OPTION(BUILD_DOCS "Generate Doxygen Documentation" OFF)
 OPTION(BUILD_TESTS "Build tests" OFF)
 OPTION(BUILD_EXAMPLES "Build examples" OFF)
+OPTION(IRSDKCPP_BUILD_SHARED "Build shared libs" OFF)
+OPTION(IRSDKCPP_BUILD_STATIC "Build static libs" ON)
+
+IF(IRSDKCPP_BUILD_STATIC)
+  SET(BUILD_STATIC_LIBS ON)
+ENDIF()
+
+IF(IRSDKCPP_BUILD_SHARED)
+  SET(BUILD_SHARED_LIBS ON)
+ENDIF()
 
 # IRSDKCPP
 SET(sdkTarget ${PROJECT_NAME})
@@ -71,13 +81,16 @@ INCLUDE(cmake/targets.cmake)
 INCLUDE(cmake/fs.cmake)
 INCLUDE(cmake/dependencies.cmake NO_POLICY_SCOPE)
 INCLUDE(cmake/example_target.cmake)
-# include(cmake/hybrid_crt.cmake NO_POLICY_SCOPE)
 
 SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Include test tools
-ENABLE_TESTING()
-INCLUDE(GoogleTest)
+IF(BUILD_TESTS)
+  ENABLE_TESTING()
+  INCLUDE(CTest)
+  INCLUDE(GoogleTest)
+ENDIF()
+
 # SDK Include dir
 SET(sdkIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/include)
 

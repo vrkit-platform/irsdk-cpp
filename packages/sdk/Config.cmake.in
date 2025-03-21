@@ -5,13 +5,10 @@
 include(CMakeFindDependencyMacro)
 
 # Add dependencies (if needed)
-# find_dependency(SomeDependency REQUIRED)
 set(DEP_PACKAGES
   Microsoft.GSL
   fmt
   spdlog
-  # CLI11
-  # GTest
   yaml-cpp
   magic_enum
   nlohmann_json)
@@ -22,12 +19,6 @@ endforeach()
 
 set(
   SYSTEM_LIBRARIES
-#  advapi32
-#  Comctl32
-#  Dbghelp
-#  Shcore
-#  Shell32
-#  User32
   Winmm
 )
 

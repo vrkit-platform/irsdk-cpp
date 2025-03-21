@@ -50,14 +50,14 @@ namespace {
     return GetRaceRecordingsDir() / raceName;
   }
 
-  fs::path PrepareIBTTestFile(const std::string & baseFilename) {
+  fs::path PrepareIBTTestFile(const std::string &baseFilename) {
     auto ibtFile = ToIBTTestFile(baseFilename + ".ibt");
     auto archiveFile = ToIBTTestFile(baseFilename + ".7z");
 
     if (!fs::exists(ibtFile)) {
       if (!fs::exists(archiveFile)) {
-        auto errMsg = fmt::format("IBT archive file is missing: {}", archiveFile.string());
-        ASSERT_MSG(false, errMsg.c_str());
+        fmt::println("IBT archive file is missing: {}", archiveFile.string());
+        ASSERT_MSG(false, "IBT archive file is missing");
       }
 
       auto cmd = fmt::format("7z x -o{} {}", GetTelemetryDir().string(), archiveFile.string());
@@ -176,7 +176,6 @@ TEST_F(DiskClientTests, aggregate_laps) {
 
   std::vector<LapDataFrame> frames{client->getSampleCount()};
   auto addCurrentFrameData = [&](const DiskClientDataFrameProcessor<std::size_t>::Context &context) {
-    // info("Adding frame ({} of {}), session time ({})", context.frameIndex, context.frameCount, context.sessionTimeSeconds);
     frames.emplace_back(
       sessionTimeVar.getDouble(), lapVar.getInt(), lapTimeCurrentVar.getDouble(), incidentCountVar.getInt(), latVar.getDouble(), lonVar.getDouble());
   };
@@ -312,12 +311,11 @@ TEST_F(DiskClientTests, seek_consistency) {
   }
 
   {
-    std::array<std::int32_t, 3> sampleIdxTests {
-      static_cast<std::int32_t>(std::floor(sampleCount / 3)), 
-      0, 
-      static_cast<std::int32_t>(sampleCount - 1)
-    };
-    
+    std::array<std::int32_t, 3> sampleIdxTests{
+      static_cast<std::int32_t>(std::floor(sampleCount / 3)),
+      0,
+      static_cast<std::int32_t>(sampleCount - 1)};
+
     for (auto sampleIdxArg : sampleIdxTests) {
       EXPECT_TRUE(client->seek(sampleIdxArg)) << "Seek failed to idx " << sampleIdxArg;
 
@@ -327,7 +325,7 @@ TEST_F(DiskClientTests, seek_consistency) {
       EXPECT_NEAR(tickTestValue, sampleIdx + tickOffset, 3);
 
       std::size_t pass = 0;
-      while(client->hasNext() && pass < 3) {
+      while (client->hasNext() && pass < 3) {
         client->next();
         pass++;
       }
@@ -341,7 +339,6 @@ TEST_F(DiskClientTests, seek_consistency) {
 
       EXPECT_EQ(tickTestValue, tickTest2Value);
       EXPECT_EQ(sampleIdx, sampleIdx2);
-
     }
   }
 }

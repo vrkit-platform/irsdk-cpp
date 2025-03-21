@@ -7,34 +7,16 @@ FILE(GLOB_RECURSE sdkInternalHeaders src/*.h)
 
 # Create libraries
 SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
-SETUP_TARGET_COMPILE_DEFS(${sdkTarget})
-SETUP_TARGET_COMPILE_DEFS(${sdkTargetStatic})
 
-SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTarget})
-SETUP_STATIC_TARGET_COMPILE_OPTS(${sdkTargetStatic})
-#SETUP_DYNAMIC_TARGET_COMPILE_OPTS(${sdkTargetStatic})
+IF(IRSDKCPP_BUILD_SHARED)
+  IRSDK_CPP_CONFIGURE_TARGET(${sdkTarget})
+  IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTarget})
+ENDIF()
 
-IRSDK_CPP_CONFIGURE_TARGET(${sdkTarget})
-IRSDK_CPP_CONFIGURE_TARGET(${sdkTargetStatic})
-
-# Add dependency
-IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTarget})
-IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
-
-## Install target for dynamic library
-#install(TARGETS ${sdkTarget}
-#  EXPORT ${sdkTarget}Targets
-#  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-#
-## Install target for static library
-#install(TARGETS ${sdkTargetStatic}
-#  EXPORT ${sdkTarget}Targets
-#  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# Install headers
-#install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/
-#  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+IF(IRSDKCPP_BUILD_STATIC)
+  IRSDK_CPP_CONFIGURE_TARGET(${sdkTargetStatic})
+  IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
+ENDIF()
 
 # Export targets for use by find_package
 INSTALL(EXPORT irsdkcppTargets
@@ -77,19 +59,37 @@ IF(BUILD_DOCS)
 ENDIF()
 
 IF(BUILD_TESTS)
-  # Tests
-  ENABLE_TESTING()
-  INCLUDE(GoogleTest)
+  IF(IRSDKCPP_BUILD_STATIC)
+    SET(testTargetName ${sdkTarget}_tests_static)
+    ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
 
-  SET(testTargetName ${sdkTarget}_tests)
-  ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
-  TARGET_LINK_LIBRARIES(${testTargetName} PUBLIC
-    ${sdkTargetStatic})
-  IRSDK_CPP_CONFIGURE_TESTS_EXE(${testTargetName})
-  IRSDK_CPP_CONFIGURE_TARGET_RUNTIME(${testTargetName})
+    IRSDK_CPP_CONFIGURE_TARGET(
+      ${testTargetName}
+    )
 
-  GTEST_ADD_TESTS(
-    TARGET ${testTargetName}
-    SOURCES ${sdkTestSources}
-  )
+    TARGET_LINK_LIBRARIES(${testTargetName}
+      ${sdkTargetStatic}
+      GTest::gtest GTest::gmock
+    )
+
+    GTEST_ADD_TESTS(
+      TARGET ${testTargetName}
+      SOURCES ${sdkTestSources}
+    )
+  ENDIF()
+
+  IF(IRSDKCPP_BUILD_SHARED)
+    SET(testTargetName ${sdkTarget}_tests_shared)
+    ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
+    TARGET_LINK_LIBRARIES(${testTargetName}
+      ${sdkTarget}
+      GTest::gtest GTest::gmock
+    )
+
+    GTEST_ADD_TESTS(
+      TARGET ${testTargetName}
+      SOURCES ${sdkTestSources}
+    )
+  ENDIF()
+
 ENDIF()

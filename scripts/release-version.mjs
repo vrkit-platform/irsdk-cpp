@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // noinspection JSCheckFunctionSignatures,JSUnresolvedReference
-// noinspection JSCheckFunctionSignatures
 
 import assert from "node:assert/strict"
 import { $, cd, echo, fs as Fsx, path as Path } from "zx"

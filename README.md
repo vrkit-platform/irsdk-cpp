@@ -37,8 +37,10 @@ A Modern C++ SDK for iRacing is finally here `irsdkcpp`.
 
 > NOTE: `vcpkg` registry entry is pending [PR acceptance](https://github.com/microsoft/vcpkg/pull/44447)
 
+> NOTE: Both `static` & `dynamic` linkage is supported
+
 Either integrate it via `vcpkg` by adding `irsdkcpp` to
-your list of dependencies in `vcpkg.json`
+your list of dependencies in `vcpkg.json` or [build from source](#build-from-source).
 
 ### Build from Source
 
@@ -50,7 +52,27 @@ your list of dependencies in `vcpkg.json`
 
 #### Dependencies
 
-Dependencies are all install via `vcpkg`.
+Dependencies are all install via `vcpkg`; however if you'd prefer not to use `vcpkg`,
+the required dependency list is:
+
+```
+vcpkg-cmake
+vcpkg-cmake-config
+fmt
+magic-enum
+nlohmann-json
+ms-gsl
+range-v3
+yaml-cpp
+spdlog
+```
+
+> NOTE: To generate a fresh list yourself, just run `cat <workspace-root>/vcpkg.json | jq -r '.dependencies[].name'`.
+> 
+> Also, `gtest` & `cli11` are only needed for development purposes & running tests 
+
+
+
 
 #### Configure, Build, and Install
 
@@ -58,7 +80,11 @@ As long as you have the `VCPKG_ROOT` env variable set properly, the following co
 build (This is a Debug build, but changing Debug to Release is all that's needed for a release build:
 
 ```powershell
-cmake -B build/debug -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+# NOTE: In powershell, the tick(`) at the end of the line
+#   indicates a line-wrap, similar to `\` in a posix shell
+cmake -B build/debug -S . `
+    -DCMAKE_BUILD_TYPE=Debug `
+    -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 ```
 
 Assuming configuration was successful, run the following to build

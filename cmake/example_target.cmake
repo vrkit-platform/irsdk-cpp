@@ -1,20 +1,23 @@
 
-function(ADD_EXAMPLE exampleDir)
-  get_filename_component(exampleName ${exampleDir} NAME)
-  set(exampleTarget ${PROJECT_NAME}_example_${exampleName})
-  file(GLOB sourceFiles ${exampleDir}/*.cpp)
-  file(GLOB headerFiles ${exampleDir}/*.h)
+FUNCTION(ADD_EXAMPLE exampleDir)
+  IF(IRSDKCPP_BUILD_STATIC)
+    GET_FILENAME_COMPONENT(exampleName ${exampleDir} NAME)
+    SET(exampleTarget ${PROJECT_NAME}_example_${exampleName})
 
-  add_executable(${exampleTarget} ${sourceFiles} ${headerFiles})
-  SETUP_STATIC_TARGET_COMPILE_OPTS(${exampleTarget})
-  target_include_directories(${exampleTarget}
-    BEFORE
-    PRIVATE
-    ${sdkIncludeDir}
-  )
-  target_link_libraries(${exampleTarget} PRIVATE
-    ${sdkTargetStatic}
-    ${DEP_MAGICENUM}
-    ${DEP_FMT}
-  )
-endfunction()
+    FILE(GLOB sourceFiles ${exampleDir}/*.cpp)
+    FILE(GLOB headerFiles ${exampleDir}/*.h)
+
+    ADD_EXECUTABLE(${exampleTarget} ${sourceFiles} ${headerFiles})
+
+    TARGET_INCLUDE_DIRECTORIES(${exampleTarget}
+      BEFORE
+      PRIVATE
+      ${sdkIncludeDir}
+    )
+    TARGET_LINK_LIBRARIES(${exampleTarget} PRIVATE
+      ${sdkTargetStatic}
+      ${DEP_MAGICENUM}
+      ${DEP_FMT}
+    )
+  ENDIF()
+ENDFUNCTION()
