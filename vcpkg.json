@@ -43,10 +43,6 @@
       "version>=": "1.13.0#1"
     },
     {
-      "name": "cli11",
-      "version>=": "2.3.2"
-    },
-    {
       "name": "gtest",
       "version>=": "1.14.0"
     }

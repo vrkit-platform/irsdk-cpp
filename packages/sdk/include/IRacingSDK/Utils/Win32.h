@@ -20,6 +20,7 @@
 #pragma once
 
 #include <windows.h>
+#include <memoryapi.h>
 #include <winrt/base.h>
 
 #include "./CollectionHelpers.h"

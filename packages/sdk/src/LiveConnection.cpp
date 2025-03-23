@@ -36,6 +36,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _WIN32_WINNT MIN_WIN_VER
 #endif
 
+#include <windows.h>
+#include <memoryapi.h>
+
 #include <atomic>
 #include <climits>
 #include <cstdio>

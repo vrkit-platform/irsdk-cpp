@@ -1,3 +1,6 @@
+#include <windows.h>
+#include <memoryapi.h>
+
 #include <cstring>
 #include <mutex>
 
