@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <IRacingSDK/DataHeader.h>
 #include <IRacingSDK/ErrorTypes.h>
 #include <IRacingSDK/Types.h>
+#include <IRacingSDK/DLLExports.h>
 
 // A C++ wrapper around the irsdk calls that takes care of reading a .ibt file
 namespace IRacingSDK {
@@ -42,7 +43,7 @@ namespace IRacingSDK {
 
   struct ClientProvider;
 
-  class Client {
+  class IRSDKCPP_API Client {
   public:
     using SessionInfoWithUpdateCount = std::pair<std::int32_t, std::shared_ptr<SessionInfo::SessionInfoMessage>>;
     using WeakSessionInfoWithUpdateCount = std::pair<std::int32_t, std::weak_ptr<SessionInfo::SessionInfoMessage>>;
@@ -126,7 +127,7 @@ namespace IRacingSDK {
 };
 
 
-  struct ClientProvider {
+  struct IRSDKCPP_API ClientProvider {
 
     virtual std::shared_ptr<Client> getClient() = 0;
 

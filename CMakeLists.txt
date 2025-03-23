@@ -3,8 +3,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.21.1)
 # Windows SDK/Kit
 SET(WINDOWS_SDK_VERSION "10.0.22621.0")
 
-CMAKE_POLICY(SET CMP0091 NEW)
-CMAKE_POLICY(SET CMP0042 NEW)
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
 
 SET(sdkNamePrefix irsdkcpp)
 
@@ -25,25 +26,52 @@ LIST(GET version_parts 0 sdkVersionMajor)
 LIST(GET version_parts 1 sdkVersionMinor)
 LIST(GET version_parts 2 sdkVersionPatch)
 
-PROJECT(${sdkNamePrefix} VERSION ${sdkVersion})
+PROJECT(${sdkNamePrefix} VERSION ${sdkVersion} LANGUAGES CXX)
 
-OPTION(BUILD_DOCS "Generate Doxygen Documentation" OFF)
-OPTION(BUILD_TESTS "Build tests" OFF)
-OPTION(BUILD_EXAMPLES "Build examples" OFF)
+include(CMakePackageConfigHelpers)
+include(CMakeDependentOption)
+include(CheckCXXCompilerFlag)
+include(GNUInstallDirs)
+
+option(IRSDKCPP_ENABLE_PIC "Use Position-Independent Code " ON)
+OPTION(IRSDKCPP_BUILD_DOCS "Generate Doxygen Documentation" OFF)
+OPTION(IRSDKCPP_BUILD_TESTS "Build tests" OFF)
+OPTION(IRSDKCPP_BUILD_EXAMPLES "Build examples" OFF)
 OPTION(IRSDKCPP_BUILD_SHARED "Build shared libs" OFF)
-OPTION(IRSDKCPP_BUILD_STATIC "Build static libs" ON)
 
-IF(IRSDKCPP_BUILD_STATIC)
-  SET(BUILD_STATIC_LIBS ON)
-ENDIF()
+cmake_dependent_option(IRSDKCPP_MSVC_SHARED_RT
+  "MSVC: Build irsdkcpp with shared runtime libs (/MD)" ON
+  "CMAKE_SYSTEM_NAME MATCHES Windows" OFF)
+
+set(IRSDKCPP_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+  CACHE STRING "Path to install the CMake package to")
 
 IF(IRSDKCPP_BUILD_SHARED)
+  SET(IRSDKCPP_BUILD_STATIC OFF)    
   SET(BUILD_SHARED_LIBS ON)
+  SET(BUILD_STATIC_LIBS OFF)
+  SET(LIB_TYPE shared)
+ELSE()
+  SET(IRSDKCPP_BUILD_STATIC ON)  
+  SET(BUILD_STATIC_LIBS ON)
+  SET(BUILD_SHARED_LIBS OFF)
+  SET(LIB_TYPE static)
 ENDIF()
 
+STRING(TOUPPER ${LIB_TYPE} IRSDKCPP_LIB_TYPE)
+
+set(buildShared $<BOOL:${IRSDKCPP_BUILD_SHARED}>)
+set(buildWindowsDLL $<AND:$<BOOL:${CMAKE_HOST_WIN32}>,${buildShared}>)
+set(notMSVC $<NOT:$<CXX_COMPILER_ID:MSVC>>)
+set(isMSVCSharedRT $<BOOL:${IRSDKCPP_MSVC_SHARED_RT}>)
+
+if (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY
+    MultiThreaded$<$<CONFIG:Debug>:Debug>$<${isMSVCSharedRT}:DLL>)
+endif()
+
 # IRSDKCPP
-SET(sdkTarget ${PROJECT_NAME})
-SET(sdkTargetStatic ${sdkTarget}_static)
+SET(sdkTarget ${PROJECT_NAME}_${LIB_TYPE})
 
 # Setup
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -51,7 +79,7 @@ SET(CMAKE_CXX_STANDARD 23)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # DOXYGEN
-IF(BUILD_DOCS)
+IF(IRSDKCPP_BUILD_DOCS)
   FIND_PACKAGE(Doxygen REQUIRED)
 ENDIF()
 
@@ -71,27 +99,26 @@ ELSE()
 ENDIF()
 
 SET(CMAKE_CXX_VISIBILITY_PRESET visible)
+SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Add WCHAR def for `spdlog` header inclusion
 ADD_COMPILE_DEFINITIONS(SPDLOG_WCHAR_TO_UTF8_SUPPORT SPDLOG_WCHAR_SUPPORT SPDLOG_NO_EXCEPTIONS)
 
 # Include CMake helper libs
-INCLUDE(cmake/system.cmake)
 INCLUDE(cmake/targets.cmake)
 INCLUDE(cmake/fs.cmake)
 INCLUDE(cmake/dependencies.cmake NO_POLICY_SCOPE)
 INCLUDE(cmake/example_target.cmake)
 
-SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
 # Include test tools
-IF(BUILD_TESTS)
+IF(IRSDKCPP_BUILD_TESTS)
   ENABLE_TESTING()
   INCLUDE(CTest)
   INCLUDE(GoogleTest)
 ENDIF()
 
 # SDK Include dir
+SET(sdkPrivateIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/src)
 SET(sdkIncludeDir ${CMAKE_SOURCE_DIR}/packages/sdk/include)
 
 ADD_SUBDIRECTORY(packages)

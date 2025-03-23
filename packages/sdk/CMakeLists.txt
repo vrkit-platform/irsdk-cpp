@@ -6,46 +6,139 @@ FILE(GLOB_RECURSE sdkHeaders include/*.h)
 FILE(GLOB_RECURSE sdkInternalHeaders src/*.h)
 
 # Create libraries
-SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
+# SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
+set(msvcRT $<TARGET_PROPERTY:MSVC_RUNTIME_LIBRARY>)
 
-IF(IRSDKCPP_BUILD_SHARED)
-  IRSDK_CPP_CONFIGURE_TARGET(${sdkTarget})
-  IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTarget})
-ENDIF()
+set(msvcRTMtdStatic $<STREQUAL:${msvcRT},MultiThreadedDebug>)
+set(msvcRTMtStatic $<STREQUAL:${msvcRT},MultiThreaded>)
 
-IF(IRSDKCPP_BUILD_STATIC)
-  IRSDK_CPP_CONFIGURE_TARGET(${sdkTargetStatic})
-  IRSDK_CPP_CONFIGURE_SDK_LIBS(${sdkTargetStatic})
-ENDIF()
+set(msvcRTMtdDll $<STREQUAL:${msvcRT},MultiThreadedDebugDLL>)
+set(msvcRTMtDll $<STREQUAL:${msvcRT},MultiThreadedDLL>)
 
-# Export targets for use by find_package
-INSTALL(EXPORT irsdkcppTargets
-  FILE irsdkcppTargets.cmake
-  NAMESPACE irsdkcpp::
-  DESTINATION share/irsdkcpp)
+set(backportMSVCRuntime $<VERSION_LESS:${CMAKE_VERSION},3.15>)
 
-# Install a cmake configuration file
-INCLUDE(CMakePackageConfigHelpers)
+ADD_LIBRARY(${sdkTarget} ${IRSDKCPP_LIB_TYPE} ${sdkSources} ${sdkHeaders} ${exportHeader})
+add_library(irsdkcpp::${sdkTarget} ALIAS ${sdkTarget})
 
-# Generate and install the configuration file
-CONFIGURE_PACKAGE_CONFIG_FILE(
-  ${CMAKE_CURRENT_LIST_DIR}/Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
-  INSTALL_DESTINATION share/irsdkcpp)
+#GENERATE_EXPORT_HEADER(${sdkTarget} BASE_NAME ${macroBaseName})
 
-# Generate and install the version file
-WRITE_BASIC_PACKAGE_VERSION_FILE(
-  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion)
+TARGET_SOURCES(
+  ${sdkTarget}
+  PUBLIC
+  FILE_SET publicHeaders
+  TYPE HEADERS
+  BASE_DIRS ${sdkIncludeDir}
+  FILES
+  ${sdkHeaders}
+)
 
-INSTALL(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/irsdkcppConfigVersion.cmake
-  DESTINATION share/irsdkcpp)
+
+set_property(TARGET ${sdkTarget}
+  PROPERTY MSVC_RUNTIME_LIBRARY ${CMAKE_MSVC_RUNTIME_LIBRARY})
+set_property(TARGET ${sdkTarget}
+  PROPERTY CXX_STANDARD_REQUIRED ON)
+
+if (NOT IRSDKCPP_BUILD_SHARED)
+    set_property(TARGET ${sdkTarget} PROPERTY POSITION_INDEPENDENT_CODE ${IRSDKCPP_ENABLE_PIC})
+endif()
+
+
+target_include_directories(${sdkTarget}
+  PUBLIC
+    $<BUILD_INTERFACE:${sdkIncludeDir}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+    $<BUILD_INTERFACE:${sdkPrivateIncludeDir}>)
+
+target_compile_options(${sdkTarget}
+PRIVATE
+  $<$<AND:${backportMSVCRuntime},${msvcRTMtdStatic}>:-MTd>
+  $<$<AND:${backportMSVCRuntime},${msvcRTMtStatic}>:-MT>
+  $<$<AND:${backportMSVCRuntime},${msvcRTMtdDll}>:-MDd>
+  $<$<AND:${backportMSVCRuntime},${msvcRTMtDll}>:-MD>
+
+  # /wd4127 = disable warning C4127 "conditional expression is constant"
+  # http://msdn.microsoft.com/en-us/library/6t66728h.aspx
+  # /wd4355 = disable warning C4355 "'this' : used in base member initializer list
+  # http://msdn.microsoft.com/en-us/library/3c594ae3.aspx
+  $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>)
+
+target_compile_definitions(${sdkTarget}
+  PUBLIC
+    $<$<BOOL:${IRSDKCPP_BUILD_SHARED}>:IRSDKCPP_SHARED_LIB>
+    $<$<NOT:$<BOOL:${IRSDKCPP_BUILD_SHARED}>>:IRSDKCPP_STATIC_LIB>
+  PRIVATE
+    $<${buildWindowsDLL}:IRSDKCPP_DLL>)
+
+TARGET_COMPILE_DEFINITIONS(
+  ${sdkTarget}
+  PRIVATE
+  $<$<CONFIG:Debug>:DEBUG>
+  BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+  FMT_USE_STRING_VIEW
+  SPDLOG_NO_EXCEPTIONS=1
+  SPDLOG_WCHAR_SUPPORT=1
+  SPDLOG_WCHAR_TO_UTF8_SUPPORT=1
+)
+
+target_sources(${sdkTarget}
+  PRIVATE
+    ${sdkTargetSources})
+
+IRSDKCPP_TARGET_LINK_SDK_LIBS(${sdkTarget})
+
+if (NOT DEFINED CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX "d")
+endif()
+
+set_target_properties(${sdkTarget} PROPERTIES
+  VERSION "${PROJECT_VERSION}"
+  SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+  PROJECT_LABEL "${PROJECT_NAME} ${LIB_TYPE}"
+  DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+
+set(EXPORT_TARGETS irsdkcpp::${sdkTarget})
+configure_package_config_file(
+  "${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake.in"
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+  INSTALL_DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}"
+  PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR)
+unset(EXPORT_TARGETS)
+
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+  COMPATIBILITY AnyNewerVersion)
+
+configure_file(${PROJECT_NAME}.pc.in ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
+
+install(TARGETS ${sdkTarget}
+  EXPORT ${PROJECT_NAME}-targets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#  INCLUDE DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILE_SET publicHeaders)
+
+install(
+  DIRECTORY ${sdkIncludeDir}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+              FILES_MATCHING PATTERN "*.h")
+
+install(EXPORT ${PROJECT_NAME}-targets
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}")
+install(FILES
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+  DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}")
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+
+
 
 # Documentation Generation
-IF(BUILD_DOCS)
+IF(IRSDKCPP_BUILD_DOCS)
   SET(DOXYGEN_PROJECT_NAME irsdkcpp)
   SET(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/xml)
   SET(DOXYGEN_RECURSIVE YES)
@@ -58,40 +151,22 @@ IF(BUILD_DOCS)
   )
 ENDIF()
 
-IF(BUILD_TESTS)
-  IF(IRSDKCPP_BUILD_STATIC)
-    SET(testTargetName ${sdkTarget}_tests_static)
-    ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
+IF(IRSDKCPP_BUILD_TESTS)
+  SET(testTargetName ${sdkTarget}_tests)
+  ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
 
-    IRSDK_CPP_CONFIGURE_TARGET(
-      ${testTargetName}
-    )
+  IRSDK_CPP_CONFIGURE_TARGET(
+    ${testTargetName}
+  )
 
-    TARGET_LINK_LIBRARIES(${testTargetName}
-      ${sdkTargetStatic}
-      GTest::gtest GTest::gmock
-    )
+  TARGET_LINK_LIBRARIES(${testTargetName}
+    ${sdkTarget}
+    GTest::gtest GTest::gmock
+  )
 
-    GTEST_ADD_TESTS(
-      TARGET ${testTargetName}
-      SOURCES ${sdkTestSources}
-      TEST_PREFIX static
-    )
-  ENDIF()
-
-  IF(IRSDKCPP_BUILD_SHARED)
-    SET(testTargetName ${sdkTarget}_tests_shared)
-    ADD_EXECUTABLE(${testTargetName} ${sdkTestSources})
-    TARGET_LINK_LIBRARIES(${testTargetName}
-      ${sdkTarget}
-      GTest::gtest GTest::gmock
-    )
-
-    GTEST_ADD_TESTS(
-      TARGET ${testTargetName}
-      SOURCES ${sdkTestSources}
-      TEST_PREFIX shared
-    )
-  ENDIF()
-
+  GTEST_ADD_TESTS(
+    TARGET ${testTargetName}
+    SOURCES ${sdkTestSources}
+    TEST_PREFIX ${LIB_TYPE}
+  )
 ENDIF()

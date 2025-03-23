@@ -14,9 +14,27 @@
 		},
 		{
 			"path": "../vcpkg"
+		},
+		{
+			"path": "../../oss/yaml-cpp"
 		}
 	],
-	"settings": {},
+	"settings": {
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": false,
+			"**/.hg": false,
+			"**/CVS": false,
+			"**/.DS_Store": false,
+			"**/Thumbs.db": false,
+			"**/.clwb": true,
+			"**/.idea": true,
+			"**/.vscode": true,
+			"**/build": true
+		},
+		"explorerExclude.showPicker": true,
+		"explorerExclude.backup": {}
+	},
 	"launch": {
 		"configurations": [
 			{

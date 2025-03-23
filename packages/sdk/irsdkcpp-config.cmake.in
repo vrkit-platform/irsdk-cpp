@@ -1,0 +1,56 @@
+# - Config file for the irsdkcpp package
+# It defines the following variables
+#  IRSDKCPP_INCLUDE_DIR       - include directory
+#  IRSDKCPP_LIBRARY_DIR       - directory containing libraries
+#  IRSDKCPP_SHARED_LIBS_BUILT - whether we have built shared libraries or not
+#  IRSDKCPP_LIBRARIES         - libraries to link against
+
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Add dependencies (if needed)
+set(DEP_PACKAGES
+  Microsoft.GSL
+  fmt
+  spdlog
+  yaml-cpp
+  magic_enum
+  nlohmann_json)
+
+foreach(depPkgName ${DEP_PACKAGES})
+  find_package(${depPkgName} CONFIG REQUIRED)
+endforeach()
+
+set(
+  SYSTEM_LIBRARIES
+  Winmm
+)
+
+foreach(LIBRARY ${SYSTEM_LIBRARIES})
+  add_library("System::${LIBRARY}" INTERFACE IMPORTED GLOBAL)
+  set_property(
+    TARGET "System::${LIBRARY}"
+    PROPERTY IMPORTED_LIBNAME "${LIBRARY}"
+  )
+endforeach()
+
+set_and_check(IRSDKCPP_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(IRSDKCPP_LIBRARY_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+# Are we building shared libraries?
+set(IRSDKCPP_SHARED_LIBS_BUILT @IRSDKCPP_BUILD_SHARED@)
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${CMAKE_CURRENT_LIST_DIR}/irsdkcpp-targets.cmake")
+
+# These are IMPORTED targets created by irsdkcpp-targets.cmake
+set(IRSDKCPP_LIBRARIES "@EXPORT_TARGETS@")
+
+# Protect against multiple inclusion, which would fail when already imported targets are added once more.
+if(NOT TARGET irsdkcpp)
+  add_library(irsdkcpp INTERFACE IMPORTED) 
+  target_link_libraries(irsdkcpp INTERFACE irsdkcpp::${IRSDKCPP_LIBTYPE})   
+endif()
+
+check_required_components(irsdkcpp)

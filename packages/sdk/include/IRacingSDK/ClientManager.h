@@ -9,11 +9,12 @@
 
 #include "Utils/Singleton.h"
 #include "Client.h"
+#include <IRacingSDK/DLLExports.h>
 
 namespace IRacingSDK {
   using namespace Utils;
 
-  class ClientManager : public Singleton<ClientManager> {
+  class IRSDKCPP_API ClientManager : public Singleton<ClientManager> {
   public:
 
 
