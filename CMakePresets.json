@@ -21,11 +21,10 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "VCPKG_ROOT": "${sourceDir}/vcpkg",
         "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
-        "BUILD_EXAMPLES": "OFF",
-        "BUILD_DOCS": "OFF",
-        "BUILD_TESTS": "OFF",
-        "IRSDKCPP_BUILD_SHARED": "ON",
-        "IRSDKCPP_BUILD_STATIC": "ON"
+        "IRSDKCPP_BUILD_EXAMPLES": "OFF",
+        "IRSDKCPP_BUILD_DOCS": "OFF",
+        "IRSDKCPP_BUILD_TESTS": "OFF",
+        "IRSDKCPP_BUILD_SHARED": "OFF"
       }
     },
     {

@@ -49,8 +49,8 @@ set(IRSDKCPP_LIBRARIES "@EXPORT_TARGETS@")
 
 # Protect against multiple inclusion, which would fail when already imported targets are added once more.
 if(NOT TARGET irsdkcpp)
-  add_library(irsdkcpp INTERFACE IMPORTED) 
-  target_link_libraries(irsdkcpp INTERFACE irsdkcpp::${IRSDKCPP_LIBTYPE})   
+    add_library(irsdkcpp INTERFACE IMPORTED) 
+  target_link_libraries(irsdkcpp INTERFACE irsdkcpp::irsdkcpp_@LIB_TYPE@)
 endif()
 
 check_required_components(irsdkcpp)
