@@ -7,18 +7,18 @@ FILE(GLOB_RECURSE sdkInternalHeaders src/*.h)
 
 # Create libraries
 # SETUP_LIB_EXPORTS(${sdkTarget} ${sdkTargetStatic} sdkSources sdkInternalHeaders sdkHeaders)
-set(msvcRT $<TARGET_PROPERTY:MSVC_RUNTIME_LIBRARY>)
+SET(msvcRT $<TARGET_PROPERTY:MSVC_RUNTIME_LIBRARY>)
 
-set(msvcRTMtdStatic $<STREQUAL:${msvcRT},MultiThreadedDebug>)
-set(msvcRTMtStatic $<STREQUAL:${msvcRT},MultiThreaded>)
+SET(msvcRTMtdStatic $<STREQUAL:${msvcRT},MultiThreadedDebug>)
+SET(msvcRTMtStatic $<STREQUAL:${msvcRT},MultiThreaded>)
 
-set(msvcRTMtdDll $<STREQUAL:${msvcRT},MultiThreadedDebugDLL>)
-set(msvcRTMtDll $<STREQUAL:${msvcRT},MultiThreadedDLL>)
+SET(msvcRTMtdDll $<STREQUAL:${msvcRT},MultiThreadedDebugDLL>)
+SET(msvcRTMtDll $<STREQUAL:${msvcRT},MultiThreadedDLL>)
 
-set(backportMSVCRuntime $<VERSION_LESS:${CMAKE_VERSION},3.15>)
+SET(backportMSVCRuntime $<VERSION_LESS:${CMAKE_VERSION},3.15>)
 
 ADD_LIBRARY(${sdkTarget} ${IRSDKCPP_LIB_TYPE} ${sdkSources} ${sdkHeaders} ${exportHeader})
-add_library(irsdkcpp::${sdkTarget} ALIAS ${sdkTarget})
+ADD_LIBRARY(irsdkcpp::${sdkTarget} ALIAS ${sdkTarget})
 
 #GENERATE_EXPORT_HEADER(${sdkTarget} BASE_NAME ${macroBaseName})
 
@@ -32,26 +32,24 @@ TARGET_SOURCES(
   ${sdkHeaders}
 )
 
-
-set_property(TARGET ${sdkTarget}
+SET_PROPERTY(TARGET ${sdkTarget}
   PROPERTY MSVC_RUNTIME_LIBRARY ${CMAKE_MSVC_RUNTIME_LIBRARY})
-set_property(TARGET ${sdkTarget}
+SET_PROPERTY(TARGET ${sdkTarget}
   PROPERTY CXX_STANDARD_REQUIRED ON)
 
-if (NOT IRSDKCPP_BUILD_SHARED)
-    set_property(TARGET ${sdkTarget} PROPERTY POSITION_INDEPENDENT_CODE ${IRSDKCPP_ENABLE_PIC})
-endif()
+IF(NOT IRSDKCPP_BUILD_SHARED)
+  SET_PROPERTY(TARGET ${sdkTarget} PROPERTY POSITION_INDEPENDENT_CODE ${IRSDKCPP_ENABLE_PIC})
+ENDIF()
 
-
-target_include_directories(${sdkTarget}
+TARGET_INCLUDE_DIRECTORIES(${sdkTarget}
   PUBLIC
-    $<BUILD_INTERFACE:${sdkIncludeDir}>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  $<BUILD_INTERFACE:${sdkIncludeDir}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   PRIVATE
-    $<BUILD_INTERFACE:${sdkPrivateIncludeDir}>)
+  $<BUILD_INTERFACE:${sdkPrivateIncludeDir}>)
 
-target_compile_options(${sdkTarget}
-PRIVATE
+TARGET_COMPILE_OPTIONS(${sdkTarget}
+  PRIVATE
   $<$<AND:${backportMSVCRuntime},${msvcRTMtdStatic}>:-MTd>
   $<$<AND:${backportMSVCRuntime},${msvcRTMtStatic}>:-MT>
   $<$<AND:${backportMSVCRuntime},${msvcRTMtdDll}>:-MDd>
@@ -63,12 +61,12 @@ PRIVATE
   # http://msdn.microsoft.com/en-us/library/3c594ae3.aspx
   $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>)
 
-target_compile_definitions(${sdkTarget}
+TARGET_COMPILE_DEFINITIONS(${sdkTarget}
   PUBLIC
-    $<$<BOOL:${IRSDKCPP_BUILD_SHARED}>:IRSDKCPP_SHARED_LIB>
-    $<$<NOT:$<BOOL:${IRSDKCPP_BUILD_SHARED}>>:IRSDKCPP_STATIC_LIB>
+  $<$<BOOL:${IRSDKCPP_BUILD_SHARED}>:IRSDKCPP_SHARED_LIB>
+  $<$<NOT:$<BOOL:${IRSDKCPP_BUILD_SHARED}>>:IRSDKCPP_STATIC_LIB>
   PRIVATE
-    $<${buildWindowsDLL}:IRSDKCPP_DLL>)
+  $<${buildWindowsDLL}:IRSDKCPP_DLL>)
 
 TARGET_COMPILE_DEFINITIONS(
   ${sdkTarget}
@@ -81,61 +79,58 @@ TARGET_COMPILE_DEFINITIONS(
   SPDLOG_WCHAR_TO_UTF8_SUPPORT=1
 )
 
-target_sources(${sdkTarget}
+TARGET_SOURCES(${sdkTarget}
   PRIVATE
-    ${sdkTargetSources})
+  ${sdkTargetSources})
 
 IRSDKCPP_TARGET_LINK_SDK_LIBS(${sdkTarget})
 
-if (NOT DEFINED CMAKE_DEBUG_POSTFIX)
-  set(CMAKE_DEBUG_POSTFIX "d")
-endif()
+IF(NOT DEFINED CMAKE_DEBUG_POSTFIX)
+  SET(CMAKE_DEBUG_POSTFIX "d")
+ENDIF()
 
-set_target_properties(${sdkTarget} PROPERTIES
+SET_TARGET_PROPERTIES(${sdkTarget} PROPERTIES
   VERSION "${PROJECT_VERSION}"
   SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   PROJECT_LABEL "${PROJECT_NAME} ${LIB_TYPE}"
   DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
 
-set(EXPORT_TARGETS irsdkcpp::${sdkTarget})
-configure_package_config_file(
+SET(EXPORT_TARGETS irsdkcpp::${sdkTarget})
+CONFIGURE_PACKAGE_CONFIG_FILE(
   "${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake.in"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
   INSTALL_DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}"
   PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR)
-unset(EXPORT_TARGETS)
+UNSET(EXPORT_TARGETS)
 
-write_basic_package_version_file(
+WRITE_BASIC_PACKAGE_VERSION_FILE(
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
   COMPATIBILITY AnyNewerVersion)
 
-configure_file(${PROJECT_NAME}.pc.in ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
+CONFIGURE_FILE(${PROJECT_NAME}.pc.in ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 
-install(TARGETS ${sdkTarget}
+INSTALL(TARGETS ${sdkTarget}
   EXPORT ${PROJECT_NAME}-targets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#  INCLUDE DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   FILE_SET publicHeaders)
 
-install(
+INSTALL(
   DIRECTORY ${sdkIncludeDir}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-              FILES_MATCHING PATTERN "*.h")
+  FILES_MATCHING PATTERN "*.h")
 
-install(EXPORT ${PROJECT_NAME}-targets
+INSTALL(EXPORT ${PROJECT_NAME}-targets
   NAMESPACE ${PROJECT_NAME}::
   DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}")
-install(FILES
-    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
-    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+
+INSTALL(FILES
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
   DESTINATION "${IRSDKCPP_INSTALL_CMAKEDIR}")
-install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc"
+INSTALL(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-
-
-
 
 # Documentation Generation
 IF(IRSDKCPP_BUILD_DOCS)
