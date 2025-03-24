@@ -1,6 +1,6 @@
 {
   "name": "irsdkcpp",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "iRacing SDK C++ wrapper",
   "repository": {
     "type": "git",
