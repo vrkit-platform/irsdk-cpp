@@ -7,16 +7,7 @@
 			"path": "../vcpkg-vrkit-platform"
 		},
 		{
-			"path": "../vcpkg-vrkit-platform-examples"
-		},
-		{
-			"path": "../vcpkg-vrkit-platform-overlays"
-		},
-		{
-			"path": "../vcpkg"
-		},
-		{
-			"path": "../../oss/yaml-cpp"
+			"path": "../vcpkg-extras"
 		}
 	],
 	"settings": {
