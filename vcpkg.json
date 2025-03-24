@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "license": "MIT",
   "builtin-baseline": "47bf3d1ac192b3fa0feb6e6ac9c845de179eebe9",
-  "supports": "windows & x64 & !linux & !osx",
+  "supports": "windows & x64 & !uwp",
   "dependencies": [
     {
       "name" : "vcpkg-cmake",
