@@ -17,6 +17,9 @@ const versionInc = argv["inc"] ?? "patch",
   pkgFile = Path.join(rootDir, "package.json"),
   pkgJson = Fsx.readJSONSync(pkgFile),
   { version: currentPkgVersion } = pkgJson,
+  vcpkgFile = Path.join(rootDir, "vcpkg.json"),
+  vcpkgJson = Fsx.readJSONSync(vcpkgFile),
+  currentVCPKGVersion = vcpkgJson.version,
   cmakeVersionFile = Path.join(rootDir, "version.txt"),
   currentCMakeVersion = Fsx.readFileSync(cmakeVersionFile, "utf-8")
 
@@ -47,7 +50,17 @@ async function updateCMakeVersion() {
   await $`git add ${Path.relative(rootDir, cmakeVersionFile)}`
 }
 
+async function updateVCPKGVersion() {
+  echo`Updating VCPKG version (${currentVCPKGVersion} -> ${newVersion})`
+  
+  vcpkgJson.version = newVersion
+  Fsx.writeJSONSync(vcpkgFile, vcpkgJson)
+  
+  await $`git add ${Path.relative(rootDir, vcpkgFile)}`
+}
+
 await updatePackageJson()
 await updateCMakeVersion()
+await updateVCPKGVersion()
 
 await $`git commit -m "bumped version ${currentPkgVersion} -> ${newVersion}"`
