@@ -53,7 +53,7 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
 /** Create and automatically start and stop a named activity.
  *
  * @param OKBTL_ACTIVITY the local variable to store the activity in
- * @param OKBTL_NAME the name of the activity (C string literal)
+ * @param IRSDK_CPP_NAME the name of the activity (C string literal)
  *
  * @see IRSDK_CPP_TraceLoggingScope if you don't need the local variable
  *
@@ -61,14 +61,14 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
  * is valid both inside an implementation, and in a class definition.
  */
 #define IRSDK_CPP_TraceLoggingScopedActivity( \
-  OKBTL_ACTIVITY, OKBTL_NAME, ...) \
+  OKBTL_ACTIVITY, IRSDK_CPP_NAME, ...) \
   const std::function<void(TraceLoggingThreadActivity<gTraceProvider>&)> \
     IRSDK_CPP_CONCAT2(_StartImpl, OKBTL_ACTIVITY) \
     = [&, loc = std::source_location::current()]( \
         TraceLoggingThreadActivity<gTraceProvider>& activity) { \
         TraceLoggingWriteStart( \
           activity, \
-          OKBTL_NAME, \
+          IRSDK_CPP_NAME, \
           IRSDK_CPP_TraceLoggingSourceLocation(loc), \
           ##__VA_ARGS__); \
       }; \
@@ -96,17 +96,17 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
       if (exceptionCount) [[unlikely]] { \
         TraceLoggingWriteStop( \
           *this, \
-          OKBTL_NAME, \
+          IRSDK_CPP_NAME, \
           TraceLoggingValue(exceptionCount, "UncaughtExceptions")); \
       } else { \
-        TraceLoggingWriteStop(*this, OKBTL_NAME); \
+        TraceLoggingWriteStop(*this, IRSDK_CPP_NAME); \
       } \
     } \
     void CancelAutoStop() { \
       mAutoStop = false; \
     } \
-    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, int); \
-    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(OKBTL_NAME, const char*); \
+    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(IRSDK_CPP_NAME, int); \
+    _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult(IRSDK_CPP_NAME, const char*); \
 \
    private: \
     bool mStopped {false}; \
@@ -117,7 +117,7 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
 
 // Not using templates as they're not permitted in local classes
 #define _IRSDK_CPP_TRACELOGGING_IMPL_StopWithResult( \
-  OKBTL_NAME, OKBTL_RESULT_TYPE) \
+  IRSDK_CPP_NAME, OKBTL_RESULT_TYPE) \
   void StopWithResult(OKBTL_RESULT_TYPE result) { \
     if (mStopped) [[unlikely]] { \
       OutputDebugStringW(L"Double-stopped in StopWithResult()"); \
@@ -127,7 +127,7 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
     this->CancelAutoStop(); \
     mStopped = true; \
     TraceLoggingWriteStop( \
-      *this, OKBTL_NAME, TraceLoggingValue(result, "Result")); \
+      *this, IRSDK_CPP_NAME, TraceLoggingValue(result, "Result")); \
   }
 
 /** Create and automatically start and stop a named activity.
@@ -135,16 +135,16 @@ static_assert(IRSDK_CPP_HAVE_NONSTANDARD_VA_ARGS_COMMA_ELISION);
  * Convenience wrapper around IRSDK_CPP_TraceLoggingScopedActivity
  * that generates the local variable names.
  *
- * @param OKBTL_NAME the name of the activity (C string literal)
+ * @param IRSDK_CPP_NAME the name of the activity (C string literal)
  */
-#define IRSDK_CPP_TraceLoggingScope(OKBTL_NAME, ...) \
+#define IRSDK_CPP_TraceLoggingScope(IRSDK_CPP_NAME, ...) \
   IRSDK_CPP_TraceLoggingScopedActivity( \
-    IRSDK_CPP_CONCAT2(_okbtlsa, __COUNTER__), OKBTL_NAME, ##__VA_ARGS__)
+    IRSDK_CPP_CONCAT2(_okbtlsa, __COUNTER__), IRSDK_CPP_NAME, ##__VA_ARGS__)
 
-#define IRSDK_CPP_TraceLoggingWrite(OKBTL_NAME, ...) \
+#define IRSDK_CPP_TraceLoggingWrite(IRSDK_CPP_NAME, ...) \
   TraceLoggingWrite( \
     gTraceProvider, \
-    OKBTL_NAME, \
+    IRSDK_CPP_NAME, \
     TraceLoggingValue(__FILE__, "File"), \
     TraceLoggingValue(__LINE__, "Line"), \
     TraceLoggingValue(__FUNCTION__, "Function"), \

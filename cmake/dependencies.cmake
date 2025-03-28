@@ -19,6 +19,7 @@ set(DEP_PACKAGES
   fmt
   spdlog
   yaml-cpp
+  cppwinrt
   magic_enum
   nlohmann_json)
 

@@ -21,12 +21,14 @@ ELSE()
 ENDIF()
 
 # Parse version into major, minor, and patch
-STRING(REPLACE "." ";" version_parts ${sdkVersion})
-LIST(GET version_parts 0 sdkVersionMajor)
-LIST(GET version_parts 1 sdkVersionMinor)
-LIST(GET version_parts 2 sdkVersionPatch)
+STRING(REPLACE "." ";" versionParts ${sdkVersion})
+LIST(GET versionParts 0 sdkVersionMajor)
+LIST(GET versionParts 1 sdkVersionMinor)
+LIST(GET versionParts 2 sdkVersionPatch)
 
 PROJECT(${sdkNamePrefix} VERSION ${sdkVersion} LANGUAGES CXX)
+
+SET(IRSDKCPP_VERSION ${PROJECT_VERSION})
 
 include(CMakePackageConfigHelpers)
 include(CMakeDependentOption)

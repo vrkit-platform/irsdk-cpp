@@ -2,5 +2,6 @@
   "cmake.useVsDeveloperEnvironment": "always",
   "cmake.configureArgs": [
     "-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-  ]
+  ],
+  "cmake.buildDirectory": "${workspaceFolder}/build/debug-vscode"
 }

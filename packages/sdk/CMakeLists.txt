@@ -59,7 +59,8 @@ TARGET_COMPILE_OPTIONS(${sdkTarget}
   # http://msdn.microsoft.com/en-us/library/6t66728h.aspx
   # /wd4355 = disable warning C4355 "'this' : used in base member initializer list
   # http://msdn.microsoft.com/en-us/library/3c594ae3.aspx
-  $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>)
+#  $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>
+)
 
 TARGET_COMPILE_DEFINITIONS(${sdkTarget}
   PUBLIC
@@ -114,12 +115,8 @@ INSTALL(TARGETS ${sdkTarget}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  FILE_SET publicHeaders)
-
-INSTALL(
-  DIRECTORY ${sdkIncludeDir}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING PATTERN "*.h")
+  FILE_SET publicHeaders
+)
 
 INSTALL(EXPORT ${PROJECT_NAME}-targets
   NAMESPACE ${PROJECT_NAME}::

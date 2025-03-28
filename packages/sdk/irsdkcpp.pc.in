@@ -3,9 +3,9 @@ exec_prefix=${prefix}
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 
-Name: Yaml-cpp
-Description: A YAML parser and emitter for C++
-Version: @YAML_CPP_VERSION@
+Name: irsdkcpp
+Description: Modern C++ SDK for iRacing
+Version: @IRSDKCPP_VERSION@
 Requires:
-Libs: -L${libdir} -lyaml-cpp
+Libs: -L${libdir} -lirsdkcpp_@LIB_TYPE@
 Cflags: -I${includedir}

@@ -45,6 +45,10 @@
     {
       "name": "gtest",
       "version>=": "1.14.0"
+    },
+    {
+      "name": "cppwinrt",
+      "version>=": "2.0.240111.5"
     }
   ]
 }
