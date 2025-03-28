@@ -54,7 +54,9 @@ async function updateVCPKGVersion() {
   echo`Updating VCPKG version (${currentVCPKGVersion} -> ${newVersion})`
   
   vcpkgJson.version = newVersion
-  Fsx.writeJSONSync(vcpkgFile, vcpkgJson)
+  Fsx.writeJSONSync(vcpkgFile, vcpkgJson, {
+    spaces: 2
+  })
   
   await $`git add ${Path.relative(rootDir, vcpkgFile)}`
 }
