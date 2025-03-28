@@ -55,7 +55,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(irsdkcpp)
 ```
-
+> NOTE: ALL dependencies listed in the [dependencies](#dependencies) section
+>   are required for this to function
 
 ### Build from Source
 
