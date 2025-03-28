@@ -513,8 +513,6 @@ namespace {
 } // namespace
 
 int main(int argc, char *argv[]) {
-  printf("lapTiming 1.1, press any key to exit\n");
-  // L->enable_backtrace();
   L->set_level(spdlog::level::level_enum::trace);
   L->flush_on(spdlog::level::level_enum::trace);
   printf("lapTiming 1.1, press any key to exit\n");

@@ -10,7 +10,7 @@ endif()
 SET(sdkNamePrefix irsdkcpp)
 
 # Read version number from a file
-SET(VERSION_FILE ${CMAKE_SOURCE_DIR}/version.txt)
+SET(VERSION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/version.txt)
 
 IF(EXISTS ${VERSION_FILE})
   FILE(READ ${VERSION_FILE} sdkVersion)

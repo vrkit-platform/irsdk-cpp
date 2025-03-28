@@ -33,7 +33,9 @@ A Modern C++ SDK for iRacing is finally here `irsdkcpp`.
 
 > NOTE: As iRacing is Windows only, as too is this library
 
-### VCPKG
+### CMake
+
+#### VCPKG
 
 > NOTE: `vcpkg` registry entry is pending [PR acceptance](https://github.com/microsoft/vcpkg/pull/44447)
 
@@ -41,6 +43,19 @@ A Modern C++ SDK for iRacing is finally here `irsdkcpp`.
 
 Either integrate it via `vcpkg` by adding `irsdkcpp` to
 your list of dependencies in `vcpkg.json` or [build from source](#build-from-source).
+
+#### `FetchContent`
+
+```cmake
+FetchContent_Declare(
+  irsdkcpp
+  GIT_REPOSITORY https://github.com/vrkit-platform/irsdk-cpp.git
+  GIT_TAG        origin/develop
+)
+
+FetchContent_MakeAvailable(irsdkcpp)
+```
+
 
 ### Build from Source
 
