@@ -15,6 +15,7 @@
 #include <conio.h>
 #include <csignal>
 #include <cstdio>
+#include <iostream>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <windows.h>
@@ -22,8 +23,10 @@
 #include <IRacingSDK/LiveClient.h>
 #include <IRacingSDK/LiveConnection.h>
 #include <IRacingSDK/Types.h>
+#include <IRacingSDK/Utils/CollectionHelpers.h>
 #include <IRacingSDK/VarHolder.h>
 
+#include "LapTimingData.h"
 #include "console.h"
 
 // Live weather info, may change as session progresses
@@ -91,40 +94,32 @@ namespace {
   VarHolder gCarIdxPaceFlags("CarIdxPaceFlags"); // (int) PaceFlagType, Pacing status flags for each car
   VarHolder gLapLastLapTime("LapLastLapTime");
 
-  constexpr int kMaxCars{64};
-  constexpr int kMaxNameLen{64};
 
-  double gLastTime{-1};
-  float gLastDistPct[kMaxCars]{-1};
-  double gLapStartTime[kMaxCars]{-1};
+  //
+  // double gLastTime{-1};
+  // float gLapTimingData.drivers[kMaxCars].lapDistPctLast{-1};
+  // double gLapTimingData.drivers[kMaxCars].lapStartTime{-1};
+  //
+  // // lap time for last lap, or -1 if not yet completed a lap
+  // float gLapTimingData.drivers[kMaxCars].lapTimeLast{-1};
+  //
+  //
+  // // updated for each driver as they cross the start/finish line
+  // DriverEntry gLapTimingData.drivers[kMaxCars].driverEntries;
+  // DriverStanding gLapTimingData.drivers[kMaxCars].driverStandings;
 
-  // lap time for last lap, or -1 if not yet completed a lap
-  float gLapTime[kMaxCars]{-1};
+  LapTimingData gLapTimingData{};
 
-  struct DriverEntry {
-    int carIdx;
-    int carClassId;
-    char driverName[kMaxNameLen];
-    char teamName[kMaxNameLen];
-    char carNumStr[10]; // the player car number as a character string so we can handle 001 and other oddities
-  };
-
-  // updated for each driver as they cross the start/finish line
-  DriverEntry gDriverTableTable[kMaxCars];
 
   // notify everyone when we update the file
   HANDLE hDataValidEvent{nullptr};
 
-
-  void resetState(bool isNewConnection) {
+  void ResetState(bool isNewConnection) {
     if (isNewConnection)
-      memset(gDriverTableTable, 0, sizeof(gDriverTableTable));
+      memset(&gLapTimingData, 0, sizeof(gLapTimingData));
 
     for (int i = 0; i < kMaxCars; i++) {
-      gLastTime = -1;
-      gLastDistPct[i] = -1;
-      gLapStartTime[i] = -1;
-      gLapTime[i] = -1;
+      gLapTimingData.drivers[i].reset();
     }
   }
 
@@ -145,37 +140,51 @@ namespace {
     return t1 + (t2 - t1) * pct;
   }
 
+  void processCarViewState(DriverEntry &driverEntry, int entryIdx, int carIdx) {
+  }
+
   void processLapInfo() {
     // work out lap times for all cars
     const double curTime = gSessionTime.getDouble();
 
     // if time moves backwards were in a new session!
-    if (gLastTime > curTime)
-      resetState(false);
+    if (gLapTimingData.lastSessionTime > curTime)
+      ResetState(false);
 
     for (int i = 0; i < kMaxCars; i++) {
-      const float curDistPct = gCarIdxLapDistPct.getFloat(i);
+      auto &driver = gLapTimingData.drivers[i];
+      if (driver.idx < 1)
+        continue;
+      auto idx = driver.idx;
+      auto curDistPct = driver.lapDistPct = gCarIdxLapDistPct.getFloat(idx);
+      auto curLap = driver.lap = gCarIdxLap.getInt(idx);
+      driver.lapTimeCurrent = gCarIdxEstTime.getFloat(idx);
+      driver.totalDistPct = curLap + curDistPct;
+      driver.classPosition = gCarIdxClassPosition.getInt(idx);
+      driver.position = gCarIdxClassPosition.getInt(idx);
+      // driver.gapToLeader = driver.totalDistPct
+      driver.gapToLeaderF2 = gCarIdxF2Time.getFloat(idx);
       // reject if the car blinked out of the world
       if (curDistPct != -1) {
         // did we cross the lap?
-        if (gLastDistPct[i] > 0.9f && curDistPct < 0.1f) {
+        if (gLapTimingData.drivers[i].lapDistPctLast > 0.9f && curDistPct < 0.1f) {
           // calculate exact time of lap crossing
           const double curLapStartTime =
-            interpolateTimeAcrossPoint(gLastTime, curTime, gLastDistPct[i], curDistPct, 0);
+            interpolateTimeAcrossPoint(gLapTimingData.lastSessionTime, curTime, gLapTimingData.drivers[i].lapDistPctLast, curDistPct, 0);
 
           // calculate lap time, if already crossed start/finish
-          if (gLapStartTime[i] != -1)
-            gLapTime[i] = static_cast<float>(curLapStartTime - gLapStartTime[i]);
+          if (gLapTimingData.drivers[i].lapStartTime != -1)
+            gLapTimingData.drivers[i].lapTimeLast = static_cast<float>(curLapStartTime - gLapTimingData.drivers[i].lapStartTime);
 
           // and store start/finish crossing time for next lap
-          gLapStartTime[i] = curLapStartTime;
+          gLapTimingData.drivers[i].lapStartTime = curLapStartTime;
         }
 
-        gLastDistPct[i] = curDistPct;
+        gLapTimingData.drivers[i].lapDistPctLast = curDistPct;
       }
     }
 
-    gLastTime = curTime;
+    gLapTimingData.lastSessionTime = curTime;
   }
 
   void printFlags(int flags) {
@@ -306,19 +315,42 @@ namespace {
 
     auto drivers = sessionInfo->driverInfo.drivers;
     for (int i = 0; i < kMaxCars && i < drivers.size(); i++) {
-      // skip the rest if carIdx not found
+      // skip the rest if idx not found
       auto &driverInfo = drivers[i];
       auto idx = driverInfo.carIdx;
       if (!idx)
         continue;
 
-      auto &driverEntry = gDriverTableTable[i];
-      driverEntry.carIdx = idx;
-      driverEntry.carClassId = driverInfo.carClassID;
+      auto &driverEntry = gLapTimingData.drivers[i];
+      driverEntry.idx = idx;
+      driverEntry.classId = driverInfo.carClassID;
       strcpy(driverEntry.driverName, driverInfo.userName.c_str());
       strcpy(driverEntry.teamName, driverInfo.teamName.c_str());
       strcpy(driverEntry.carNumStr, driverInfo.carNumber.c_str());
     }
+  }
+
+  std::vector<std::int32_t> GetDriverIndexes() {
+    std::vector<std::int32_t> driverIndexes{};
+    for (int i = 0; i < kMaxCars; i++) {
+      // is the car in the world, or did we at least collect data on it when it was?
+      auto &driver = gLapTimingData.drivers[i];
+      auto idx = driver.idx;
+      if (idx < 0 || gCarIdxTrackLocation.getInt(idx) == -1 || gCarIdxTrackSurface.getInt(idx) == -1 || gCarIdxLap.getInt(idx) == -1 || gCarIdxPosition.getInt(idx) == 0) {
+        continue;
+      }
+
+      driverIndexes.push_back(i);
+    }
+
+    // ALWAYS SORT BY OVERALL POSITION FIRST
+    std::ranges::sort(driverIndexes, [](int a, int b) {
+      auto &aDriver = gLapTimingData.drivers[a];
+      auto &bDriver = gLapTimingData.drivers[b];
+      return aDriver.lap > bDriver.lap || (aDriver.lap == bDriver.lap && aDriver.lapDistPct > bDriver.lapDistPct);
+    });
+
+    return driverIndexes;
   }
 
   void updateDisplay() {
@@ -372,44 +404,78 @@ namespace {
 
     // print car info
     setCursorPosition(0, carsOffset);
+
+    // SORT THE DRIVERS BASED ON VIEW MODE
+    std::vector<std::int32_t> driverIndexes = GetDriverIndexes();
+
+    if (driverIndexes.size()) {
+      auto& leader = gLapTimingData.drivers[driverIndexes[0]];
+      for (auto driverIndex : driverIndexes) {
+        auto& driver = gLapTimingData.drivers[driverIndex];
+        if (driver.idx == leader.idx) {
+          driver.gapToLeader = 0;
+          driver.gapToNext = 0;
+          continue;
+        }
+
+        if (leader.lapTimeLast < 1.0f) {
+          driver.gapToLeader = leader.lapTimeCurrent - driver.lapTimeCurrent;
+        } else {
+          driver.gapToLeader = (leader.totalDistPct - driver.totalDistPct) * leader.lapTimeLast;
+        }
+      }
+    }
     // don't scroll off the end of the buffer
     int linesUsed = 0;
     const int maxLines = min(kMaxCars, maxCarLines);
-    for (int i = 0; i < kMaxCars; i++) {
+
+    for (std::int32_t i = 0; i < driverIndexes.size();i++) {
       if (linesUsed < maxLines) {
         // is the car in the world, or did we at least collect data on it when it was?
-        if (gCarIdxTrackLocation.getInt(i) != -1 && gCarIdxTrackSurface.getInt(i) != -1 && gCarIdxLap.getInt(i) != -1 && gCarIdxPosition.getInt(i) != 0) {
-          printf(" %2d %10s %3s %7.3f %2d %2d %2d %6.3f %2d %8.2f %5.2f %2d %2d %2d %2d %7.3f %7.3f %7.3f %7.3f %2d %d %2d "
-                 "%2d %2d 0x%02x\n",
-                 i,
-                 gDriverTableTable[i].driverName,
-                 gDriverTableTable[i].carNumStr,
-                 gCarIdxEstTime.getFloat(i),
-                 gCarIdxGear.getInt(i),
-                 gCarIdxLap.getInt(i),
-                 gCarIdxLapCompleted.getInt(i),
-                 gCarIdxLapDistPct.getFloat(i),
-                 gCarIdxOnPitRoad.getBool(i),
-                 gCarIdxRPM.getFloat(i),
-                 gCarIdxSteer.getFloat(i),
-                 gCarIdxTrackSurface.getInt(i),
-                 gCarIdxTrackSurfaceMaterial.getInt(i),
-                 gCarIdxPosition.getInt(i),
-                 gCarIdxClassPosition.getInt(i),
-                 gCarIdxF2Time.getFloat(i),
-                 //****Note, don't use this one any more, it is replaced by CarIdxLastLapTime
-                 gLapTime[i],
-                 // new variables, check if they exist on members
-                 (gCarIdxLastLapTime.isValid()) ? gCarIdxLastLapTime.getFloat(i) : -1,
-                 (gCarIdxBestLapTime.isValid()) ? gCarIdxBestLapTime.getFloat(i) : -1,
-                 (gCarIdxBestLapNum.isValid()) ? gCarIdxBestLapNum.getInt(i) : -1,
-                 (gCarIdxP2P_Status.isValid()) ? gCarIdxP2P_Status.getBool(i) : -1,
-                 (gCarIdxP2P_Count.isValid()) ? gCarIdxP2P_Count.getInt(i) : -1,
-                 (gCarIdxPaceLine.isValid()) ? gCarIdxPaceLine.getInt(i) : -1,
-                 (gCarIdxPaceRow.isValid()) ? gCarIdxPaceRow.getInt(i) : -1,
-                 (gCarIdxPaceFlags.isValid()) ? gCarIdxPaceFlags.getInt(i) : -1);
-          linesUsed++;
+        auto driverIndex = driverIndexes[i];
+        auto &driver = gLapTimingData.drivers[driverIndex];
+        auto idx = driver.idx;
+        if (idx < 0 || gCarIdxTrackLocation.getInt(idx) == -1 || gCarIdxTrackSurface.getInt(idx) == -1 || gCarIdxLap.getInt(idx) == -1 || gCarIdxPosition.getInt(idx) == 0) {
+          continue;
         }
+        printf(" %2d %2d %3s %25s %3.3f %3.3f %7.3f %7.3f\n",
+          i + 1,
+          driver.position,
+          driver.carNumStr,
+          driver.driverName,
+          driver.gapToLeader,
+          driver.gapToLeaderF2, driver.lapTimeLast, driver.lapTimeCurrent);
+        // printf(" %2d %2d %10s %3s %7.3f %2d %2d %2d %6.3f %2d %8.2f %5.2f %2d %2d %2d %2d %7.3f %7.3f %7.3f %7.3f %2d %d %2d "
+        //        "%2d %2d 0x%02x\n",
+        //        driver.position,
+        //        idx,
+        //        gLapTimingData.drivers[idx].driverName,
+        //        gLapTimingData.drivers[idx].carNumStr,
+        //        gCarIdxEstTime.getFloat(idx),
+        //        gCarIdxGear.getInt(idx),
+        //        gCarIdxLap.getInt(idx),
+        //        gCarIdxLapCompleted.getInt(idx),
+        //        gCarIdxLapDistPct.getFloat(idx),
+        //        gCarIdxOnPitRoad.getBool(idx),
+        //        gCarIdxRPM.getFloat(idx),
+        //        gCarIdxSteer.getFloat(idx),
+        //        gCarIdxTrackSurface.getInt(idx),
+        //        gCarIdxTrackSurfaceMaterial.getInt(idx),
+        //        gCarIdxPosition.getInt(idx),
+        //        gCarIdxClassPosition.getInt(idx),
+        //        gCarIdxF2Time.getFloat(idx),
+        //        //****Note, don't use this one any more, it is replaced by CarIdxLastLapTime
+        //        gLapTimingData.drivers[idx].lapTimeLast,
+        //        // new variables, check if they exist on members
+        //        (gCarIdxLastLapTime.isValid()) ? gCarIdxLastLapTime.getFloat(idx) : -1,
+        //        (gCarIdxBestLapTime.isValid()) ? gCarIdxBestLapTime.getFloat(idx) : -1,
+        //        (gCarIdxBestLapNum.isValid()) ? gCarIdxBestLapNum.getInt(idx) : -1,
+        //        (gCarIdxP2P_Status.isValid()) ? gCarIdxP2P_Status.getBool(idx) : -1,
+        //        (gCarIdxP2P_Count.isValid()) ? gCarIdxP2P_Count.getInt(idx) : -1,
+        //        (gCarIdxPaceLine.isValid()) ? gCarIdxPaceLine.getInt(idx) : -1,
+        //        (gCarIdxPaceRow.isValid()) ? gCarIdxPaceRow.getInt(idx) : -1,
+        //        (gCarIdxPaceFlags.isValid()) ? gCarIdxPaceFlags.getInt(idx) : -1);
+        linesUsed++;
       }
     }
     // clear remaining lines
@@ -426,7 +492,7 @@ namespace {
       setCursorPosition(0, 1);
       if (isConnected) {
         printf("Connected to iRacing              \n");
-        resetState(true);
+        ResetState(true);
       } else
         printf("Lost connection to iRacing        \n");
 
@@ -434,6 +500,53 @@ namespace {
 
       wasConnected = isConnected;
     }
+  }
+
+  void setRelativeViewMode() {
+    gLapTimingData.viewMode = ViewMode::Relative;
+
+    auto driverIndexes = GetDriverIndexes();
+    if (driverIndexes.empty())
+      return;
+
+    if (ContainsValue(driverIndexes, gLapTimingData.relativeToDriverIndex)) {
+      return;
+    }
+
+    gLapTimingData.relativeToDriverIndex = driverIndexes[0];
+  }
+
+  void nextRelativeDriver() {
+    gLapTimingData.viewMode = ViewMode::Relative;
+
+    auto driverIndexes = GetDriverIndexes();
+    if (driverIndexes.empty())
+      return;
+
+    auto driverIndex = gLapTimingData.relativeToDriverIndex;
+    if (driverIndex == -1 || !ContainsValue(driverIndexes, gLapTimingData.relativeToDriverIndex)) {
+      gLapTimingData.relativeToDriverIndex = driverIndexes[0];
+      return;
+    }
+
+    auto it = std::ranges::find(driverIndexes, driverIndex);
+
+    if (it != driverIndexes.end()) {
+      // Calculate the index
+      size_t index = std::distance(driverIndexes.begin(), it);
+      if (index + 1 >= driverIndexes.size())
+        index = 0;
+      else
+        index += 1;
+      gLapTimingData.relativeToDriverIndex = driverIndexes[index];
+    } else {
+      gLapTimingData.relativeToDriverIndex = driverIndexes[0];
+    }
+
+
+
+
+
   }
 
   void run() {
@@ -466,63 +579,113 @@ namespace {
     // for anything not dependant on telemetry data (keeping a UI running, etc)
   }
 
+  void SignalHandler(int sig);
+
+
   //-----------------------
 
-  void ex_program(int sig) {
-    (void)sig;
+  class ExampleResources {
 
-    printf("recieved ctrl-c, exiting\n\n");
+    std::atomic_bool shutdown_{false};
 
-    timeEndPeriod(1);
+  public:
 
-    signal(SIGINT, SIG_DFL);
-    exit(0);
-  }
+    static ExampleResources &GetInstance() {
+      static ExampleResources sInstance{};
+      return sInstance;
+    };
 
-  bool init() {
-    // trap ctrl-c
-    signal(SIGINT, ex_program);
 
-    // bump priority up so we get time from the sim
-    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-
-    // ask for 1ms timer so sleeps are more precise
-    timeBeginPeriod(1);
-
-    // startup event broadcaster
-    hDataValidEvent = CreateEvent(nullptr, true, false, Resources::DataValidEventName);
-
-    //****Note, put your init logic here
-
-    return true;
-  }
-
-  void deInit() {
-    printf("Shutting down.\n\n");
-
-    // shutdown
-    if (hDataValidEvent) {
-      // make sure event not left triggered (probably redundant)
-      ResetEvent(hDataValidEvent);
-      CloseHandle(hDataValidEvent);
-      hDataValidEvent = nullptr;
+    void signalHandler(int sig) {
+      (void)sig;
+      std::printf("Received ctrl-c, exiting\n\n");
+      if (shutdown_.exchange(true)) {
+        std::println(std::cout, "Shutdown already triggered");
+      }
     }
 
-    timeEndPeriod(1);
+    bool isShutdown() {
+      return shutdown_;
+    }
+
+    bool setShutdown() {
+      return shutdown_.exchange(true);
+    }
+
+    ExampleResources() {
+      // trap ctrl-c
+      std::signal(SIGINT, SignalHandler);
+
+      // bump priority up so we get time from the sim
+      SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
+      // ask for 1ms timer so sleeps are more precise
+      timeBeginPeriod(1);
+
+      // startup event broadcaster
+      hDataValidEvent = CreateEvent(nullptr, true, false, Resources::DataValidEventName);
+    }
+
+    ~ExampleResources() {
+      printf("Shutting down.\n\n");
+
+      // shutdown
+      if (hDataValidEvent) {
+        // make sure event not left triggered (probably redundant)
+        ResetEvent(hDataValidEvent);
+        CloseHandle(hDataValidEvent);
+        hDataValidEvent = nullptr;
+      }
+
+      timeEndPeriod(1);
+    }
+  };
+
+  void SignalHandler(int sig) {
+
+    ExampleResources::GetInstance().signalHandler(sig);
   }
 } // namespace
 
 int main(int argc, char *argv[]) {
   L->set_level(spdlog::level::level_enum::trace);
   L->flush_on(spdlog::level::level_enum::trace);
-  printf("lapTiming 1.1, press any key to exit\n");
+  std::println(std::cout, "lapTiming 1.1, press Ctrl-C or Q to exit\n");
 
-  init();
-  while (!_kbhit()) {
-    run();
+  {
+    auto &resources = ExampleResources::GetInstance();
+    while (!resources.isShutdown()) {
+      if (_kbhit()) {
+        auto c = _getch();
+
+        switch (c) {
+        case 'q':
+          resources.setShutdown();
+          continue;
+        case 'r':
+          std::println(std::cout, "Mode change to 'relative'");
+          setRelativeViewMode();
+
+          break;
+        case 'n':
+          std::println(std::cout, "Next relative driver");
+          nextRelativeDriver();
+          break;
+        case 's':
+          std::println(std::cout, "Mode change to 'standings'");
+          gLapTimingData.viewMode = ViewMode::Standings;
+          break;
+        default:
+          std::println(std::cout, "Key press ignored: {}", c);
+        }
+      }
+      run();
+    }
   }
 
-  deInit();
+  signal(SIGINT, SIG_DFL);
+  exit(0);
+
 
   return 0;
 }
