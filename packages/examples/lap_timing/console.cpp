@@ -4,112 +4,130 @@
 
 #include "console.h"
 
-// true if any key was hit
-bool isKeypress()
-{
-	return _kbhit(); 
-}
+#include <magic_enum/magic_enum.hpp>
 
-// returns character that was hit, or 0 if no key
-char getKeypress()
-{
-	// default to 0 if no key hit
-	char c = 0;
+namespace Console {
+  // true if any key was hit
+  bool isKeypress()
+  {
+    return _kbhit();
+  }
 
-	// clear out key buffer, returning last char in it
-	while(_kbhit())
-		c = _getch();
+  // returns character that was hit, or 0 if no key
+  char getKeypress()
+  {
+    // default to 0 if no key hit
+    char c = 0;
 
-	return c;
-}
+    // clear out key buffer, returning last char in it
+    while(_kbhit())
+      c = _getch();
 
-// halt execution of program till user presses and releases any key
-// returns pressed char
-char waitForKeypress()
-{
-	char c = 0;
+    return c;
+  }
 
-	// clear out key buffer
-	while(_kbhit())
-		_getch();
+  // halt execution of program till user presses and releases any key
+  // returns pressed char
+  char waitForKeypress()
+  {
+    char c = 0;
 
-	while(1)
-	{
-		// wait for key press
-		if(_kbhit())
-		{
-			c = _getch();
+    // clear out key buffer
+    while(_kbhit())
+      _getch();
 
-			// wait for key release
-			while(_kbhit())
-				_getch(); // and clear buffer
+    while(1)
+    {
+      // wait for key press
+      if(_kbhit())
+      {
+        c = _getch();
 
-			// return pressed key
-			return c;
-		}
-	}
+        // wait for key release
+        while(_kbhit())
+          _getch(); // and clear buffer
 
-	// can't get hear
-	return c;
-}
+        // return pressed key
+        return c;
+      }
+    }
 
-bool getConsoleDimensions(int &w, int &h)
-{
-	// set to something
-	w = h = 0;
+    // can't get hear
+    return c;
+  }
 
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
-	if(GetConsoleScreenBufferInfo(output, &info))
-	{
-		w = info.srWindow.Right; //info.dwSize.X;
-		h = info.srWindow.Bottom; //info.dwSize.Y;
-		return true;
-	}
-	return false;
-}
+  bool getDimensions(int &w, int &h)
+  {
+    // set to something
+    w = h = 0;
 
-bool getCursorPosition(int &x, int &y)
-{
-	// set to something
-	x = y = 0;
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    if(GetConsoleScreenBufferInfo(output, &info))
+    {
+      w = info.srWindow.Right; //info.dwSize.X;
+      h = info.srWindow.Bottom; //info.dwSize.Y;
+      return true;
+    }
+    return false;
+  }
 
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
-	if(GetConsoleScreenBufferInfo(output, &info))
-	{
-		x = info.dwCursorPosition.X;
-		y = info.dwCursorPosition.Y;
-		return true;
-	}
-	return false;
-}
+  bool getCursorPosition(int &x, int &y)
+  {
+    // set to something
+    x = y = 0;
 
-void setCursorPosition(int x, int y)
-{
-	const COORD pos = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
-	const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(output, pos);
-}
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    if(GetConsoleScreenBufferInfo(output, &info))
+    {
+      x = info.dwCursorPosition.X;
+      y = info.dwCursorPosition.Y;
+      return true;
+    }
+    return false;
+  }
 
-void clearSpace(int x, int y, int count)
-{
-	setCursorPosition(x, y);
-	for(int i=0; i<count; i++)
-		_putch(' ');
-}
+  void setCursorPosition(int x, int y)
+  {
+    const COORD pos = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleCursorPosition(output, pos);
+  }
 
-void clearLine(int y)
-{
-	clearSpace(0, y, 85);
-}
+  void setStyle(Color bgColor, Color fgColor, bool bold) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-void clearScreen()
-{
-	// lame, do this right
-	//for(int y=0; y<25; y++)
-	//	clearLine(y);
+    // Convert to Windows API color format
+    WORD attributes = (magic_enum::enum_underlying(bgColor) << 4) | magic_enum::enum_underlying(fgColor);
+    if (bold) {
+      attributes |= FOREGROUND_INTENSITY;
+    }
 
-	// faster?
-	system("cls");
+    SetConsoleTextAttribute(hConsole, attributes);
+
+  }
+
+
+  void clearSpace(int x, int y, int count)
+  {
+    setCursorPosition(x, y);
+    for(int i=0; i<count; i++)
+      _putch(' ');
+  }
+
+  void clearLine(int y)
+  {
+    clearSpace(0, y, 85);
+  }
+
+  void clearScreen()
+  {
+    // lame, do this right
+    //for(int y=0; y<25; y++)
+    //	clearLine(y);
+
+    // faster?
+    system("cls");
+  }
 }

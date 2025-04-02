@@ -8,7 +8,5 @@ namespace IRacingSDK::SessionInfo
     struct SessionInfo
     {
         std::vector<Session> sessions;
-
-
     };
 }

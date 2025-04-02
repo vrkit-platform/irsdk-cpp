@@ -28,6 +28,7 @@
 
 #include "LapTimingData.h"
 #include "console.h"
+#include <cmath>
 
 // Live weather info, may change as session progresses
 namespace {
@@ -36,6 +37,7 @@ namespace {
 
   std::shared_ptr<spdlog::logger> L{spdlog::basic_logger_mt("LapTimingExample", "tmp/lap-timing.log")};
 
+  // ReSharper disable CppDeclaratorNeverUsed
   VarHolder gAirDensity("AirDensity"); // (float) kg/m^3, Density of air at start/finish line
   VarHolder gAirPressure("AirPressure"); // (float) Hg, Pressure of air at start/finish line
   VarHolder gAirTemp("AirTemp"); // (float) C, Temperature of air at start/finish line
@@ -94,19 +96,7 @@ namespace {
   VarHolder gCarIdxPaceFlags("CarIdxPaceFlags"); // (int) PaceFlagType, Pacing status flags for each car
   VarHolder gLapLastLapTime("LapLastLapTime");
 
-
-  //
-  // double gLastTime{-1};
-  // float gLapTimingData.drivers[kMaxCars].lapDistPctLast{-1};
-  // double gLapTimingData.drivers[kMaxCars].lapStartTime{-1};
-  //
-  // // lap time for last lap, or -1 if not yet completed a lap
-  // float gLapTimingData.drivers[kMaxCars].lapTimeLast{-1};
-  //
-  //
-  // // updated for each driver as they cross the start/finish line
-  // DriverEntry gLapTimingData.drivers[kMaxCars].driverEntries;
-  // DriverStanding gLapTimingData.drivers[kMaxCars].driverStandings;
+  // ReSharper restore CppDeclaratorNeverUsed
 
   LapTimingData gLapTimingData{};
 
@@ -140,8 +130,6 @@ namespace {
     return t1 + (t2 - t1) * pct;
   }
 
-  void processCarViewState(DriverEntry &driverEntry, int entryIdx, int carIdx) {
-  }
 
   void processLapInfo() {
     // work out lap times for all cars
@@ -159,9 +147,10 @@ namespace {
       auto curDistPct = driver.lapDistPct = gCarIdxLapDistPct.getFloat(idx);
       auto curLap = driver.lap = gCarIdxLap.getInt(idx);
       driver.lapTimeCurrent = gCarIdxEstTime.getFloat(idx);
+      driver.lapTimeBest = gCarIdxBestLapTime.getFloat(idx);
       driver.totalDistPct = curLap + curDistPct;
       driver.classPosition = gCarIdxClassPosition.getInt(idx);
-      driver.position = gCarIdxClassPosition.getInt(idx);
+      // driver.position = gCarIdxPosition.getInt(idx);
       // driver.gapToLeader = driver.totalDistPct
       driver.gapToLeaderF2 = gCarIdxF2Time.getFloat(idx);
       // reject if the car blinked out of the world
@@ -306,14 +295,27 @@ namespace {
       printf("WavedAround|");
   }
 
+  /**
+   * Update the `DriverEntry` records.
+   *
+   * This should only be invoked when `SessionInfo` changes
+   */
   void updateDriverInfo() {
     static auto &client = LiveClient::GetInstance();
-    auto sessionInfo = client.getSessionInfo().lock();
-    if (!sessionInfo) {
+    auto sessionInfoDoc = client.getSessionInfo().lock();
+    if (!sessionInfoDoc) {
       return;
     }
 
-    auto drivers = sessionInfo->driverInfo.drivers;
+    auto& trackLengthStr =  sessionInfoDoc->weekendInfo.trackLength;
+    gLapTimingData.trackLength = std::stod(trackLengthStr);
+    if (trackLengthStr.ends_with("km"))
+      gLapTimingData.trackLength *= 1000.0;
+
+    // COPY TO BE SAFE (LOW COST)
+    gLapTimingData.eventSessions = sessionInfoDoc->sessionInfo.sessions;
+
+    auto drivers = sessionInfoDoc->driverInfo.drivers;
     for (int i = 0; i < kMaxCars && i < drivers.size(); i++) {
       // skip the rest if idx not found
       auto &driverInfo = drivers[i];
@@ -330,12 +332,18 @@ namespace {
     }
   }
 
-  std::vector<std::int32_t> GetDriverIndexes() {
+  /**
+   * Get a list of `DriverEntry` indices in `position` order
+   *
+   * @return vector of indices, which maps to driver entry index, keyed by race position
+   */
+  std::vector<std::int32_t> GetDriverPositionIndexes() {
     std::vector<std::int32_t> driverIndexes{};
     for (int i = 0; i < kMaxCars; i++) {
-      // is the car in the world, or did we at least collect data on it when it was?
       auto &driver = gLapTimingData.drivers[i];
       auto idx = driver.idx;
+
+      // CHECK FOR VALID ENTRY & STATE
       if (idx < 0 || gCarIdxTrackLocation.getInt(idx) == -1 || gCarIdxTrackSurface.getInt(idx) == -1 || gCarIdxLap.getInt(idx) == -1 || gCarIdxPosition.getInt(idx) == 0) {
         continue;
       }
@@ -350,26 +358,131 @@ namespace {
       return aDriver.lap > bDriver.lap || (aDriver.lap == bDriver.lap && aDriver.lapDistPct > bDriver.lapDistPct);
     });
 
+    std::uint32_t pos{0};
+    for (auto &driverIndex : driverIndexes) {
+      pos++;
+      auto &driver = gLapTimingData.drivers[driverIndex];
+      driver.position = pos;
+    }
     return driverIndexes;
   }
 
+  /**
+   * Prepare relative lap timing view
+   *
+   * @param driverIndexes vector of indexes, in position order
+   * @return [bool, DriverEntry*] pair, if `first` is false, `second` is `nullptr`, and vice versa
+   */
+  std::pair<bool, DriverEntry*> PrepareRelativeView(std::vector<std::int32_t>& driverIndexes) {
+    bool relativeView = false;
+    auto& data = gLapTimingData;
+    DriverEntry* relativeToDriver{nullptr};
+    if (data.viewMode == ViewMode::Relative && data.relativeToDriverIndex >= 0) {
+      relativeView = true;
+      relativeToDriver = &data.drivers[data.relativeToDriverIndex];
+
+      // CREATE `TOP` RANGES FOR DETERMINING PRESENTATION ABOVE/BELOW
+      std::vector<std::pair<double, double>> topRanges{};
+      double topBound = relativeToDriver->lapDistPct + 0.5;
+      if (topBound > 1.0) {
+        topRanges.emplace_back(relativeToDriver->lapDistPct, 1.0);
+        topRanges.emplace_back(0.0, topBound - 1.0);
+      } else {
+        topRanges.emplace_back(relativeToDriver->lapDistPct, topBound);
+      }
+
+      for (std::int32_t i = 0; i < driverIndexes.size();i++) {
+        auto driverIndex = driverIndexes[i];
+        auto &driver = data.drivers[driverIndex];
+
+        if (driver.idx == relativeToDriver->idx) {
+          driver.gapToRelative = 0.0;
+          continue;
+        }
+
+        bool isAbove = std::ranges::any_of(topRanges, [&] (std::pair<double,double>& range) -> bool {
+          return driver.lapDistPct >= range.first && driver.lapDistPct < range.second;
+        });
+
+        double diffPct = std::min<double>(
+          std::fabs(relativeToDriver->lapDistPct - driver.lapDistPct),
+          std::fabs(1.0 + driver.lapDistPct - relativeToDriver->lapDistPct)
+        );
+
+        std::vector<double> availableLapTimes{driver.lapTimeBest, driver.lapTimeLast, relativeToDriver->lapTimeBest, relativeToDriver->lapTimeLast};
+        double lapTime = -1;
+        for (auto lt : availableLapTimes) {
+          if (lt <= 0.0) {
+            continue;
+          }
+          lapTime = lt;
+          break;
+        }
+
+        if (lapTime > 0.0) {
+          driver.gapToRelative = diffPct * lapTime;
+        } else {
+          driver.gapToRelative = std::max<double>(relativeToDriver->lapTimeCurrent, driver.lapTimeCurrent)
+            - std::min<double>(relativeToDriver->lapTimeCurrent, driver.lapTimeCurrent);
+
+        }
+
+        if (!isAbove) {
+          driver.gapToRelative *= -1;
+        }
+      }
+
+      std::ranges::sort(driverIndexes, [](int a, int b) {
+        auto &aDriver = gLapTimingData.drivers[a];
+        auto &bDriver = gLapTimingData.drivers[b];
+        return aDriver.gapToRelative > bDriver.gapToRelative;
+      });
+
+    }
+
+    return {relativeView, relativeToDriver};
+  }
+
+  /**
+   * Update the console display
+   */
   void updateDisplay() {
-    // force console to scroll to top line
-    setCursorPosition(0, 0);
+    auto& data = gLapTimingData;
 
+    // CONSOLE DIMENSIONS
     int width, height;
-    getConsoleDimensions(width, height);
+    Console::getDimensions(width, height);
 
-    const int statusOffset = 3;
-    const int carsOffset = 6;
+    // GET SESSION INFO
+    auto sessionType{SessionType::Unknown};
+    std::string sessionName{magic_enum::enum_name(SessionType::Unknown)};
+
+    auto sessionNum = gSessionNum.getInt();
+    for (auto& eventSession: data.eventSessions) {
+      if (eventSession.sessionNum == sessionNum) {
+        sessionName = eventSession.sessionName;
+        sessionType = magic_enum::enum_cast<SessionType>(sessionName, magic_enum::case_insensitive).value_or(SessionType::Unknown);
+        break;
+      }
+    }
+
+    // force console to scroll to top line
+    Console::setCursorPosition(0, 0);
+    Console::setStyle();
+
+    constexpr int statusOffset = 3;
+    constexpr int carsOffset = 6;
     const int maxCarLines = height - carsOffset;
 
     // print race status line
-    setCursorPosition(0, statusOffset);
+    Console::setCursorPosition(0, statusOffset);
+    Console::setStyle(Console::Color::BLACK,Console::Color::RED);
     printf("Time: ");
     printTime(gSessionTime.getDouble());
+    Console::setStyle();
 
-    printf(" Session: %d", gSessionNum.getInt());
+    std::print(std::cout, " Session ({}): {}/{}", sessionNum, sessionName, magic_enum::enum_name(sessionType));
+
     printf(" Coordinate: %f,%f", gLongitude.getDouble(), gLatitude.getDouble());
     printf(" LapsComplete: %03d", gRaceLaps.getInt());
 
@@ -385,7 +498,7 @@ namespace {
       printf("Unlimited");
 
     // print flag status
-    setCursorPosition(0, statusOffset + 1);
+    Console::setCursorPosition(0, statusOffset + 1);
     printf("Last lap time: %f ", gLapLastLapTime.getFloat());
 
     printf(" flags: ");
@@ -403,10 +516,10 @@ namespace {
     }
 
     // print car info
-    setCursorPosition(0, carsOffset);
+    Console::setCursorPosition(0, carsOffset);
 
     // SORT THE DRIVERS BASED ON VIEW MODE
-    std::vector<std::int32_t> driverIndexes = GetDriverIndexes();
+    std::vector<std::int32_t> driverIndexes = GetDriverPositionIndexes();
 
     if (driverIndexes.size()) {
       auto& leader = gLapTimingData.drivers[driverIndexes[0]];
@@ -425,9 +538,19 @@ namespace {
         }
       }
     }
+
+    auto [relativeView, relativeToDriver] = PrepareRelativeView(driverIndexes);
+
+
     // don't scroll off the end of the buffer
     int linesUsed = 0;
-    const int maxLines = min(kMaxCars, maxCarLines);
+    if (relativeView) {
+      linesUsed++;
+      Console::setStyle(Console::Color::BLACK, Console::Color::RED);
+      std::println(std::cout, "Relative to driver: {}", relativeToDriver->driverName);
+      Console::setStyle();
+    }
+    const int maxLines = std::min<int>(kMaxCars, maxCarLines);
 
     for (std::int32_t i = 0; i < driverIndexes.size();i++) {
       if (linesUsed < maxLines) {
@@ -438,13 +561,33 @@ namespace {
         if (idx < 0 || gCarIdxTrackLocation.getInt(idx) == -1 || gCarIdxTrackSurface.getInt(idx) == -1 || gCarIdxLap.getInt(idx) == -1 || gCarIdxPosition.getInt(idx) == 0) {
           continue;
         }
-        printf(" %2d %2d %3s %25s %3.3f %3.3f %7.3f %7.3f\n",
-          i + 1,
-          driver.position,
-          driver.carNumStr,
-          driver.driverName,
-          driver.gapToLeader,
-          driver.gapToLeaderF2, driver.lapTimeLast, driver.lapTimeCurrent);
+        if (relativeView && !!relativeToDriver) {
+          if (driver.idx == relativeToDriver->idx) {
+            Console::setStyle(Console::Color::BLACK, Console::Color::GREEN, true);
+          } else if (driver.gapToRelative > relativeToDriver->gapToRelative) {
+            Console::setStyle(Console::Color::BLACK, Console::Color::BLUE);
+          } else {
+            Console::setStyle(Console::Color::BLACK, Console::Color::RED);
+          }
+
+          printf(" %2d %2d %25s %03.3f secs \n",
+            driver.position,
+            driver.lap,
+            // driver.carNumStr,
+            driver.driverName,
+
+            driver.gapToRelative
+            );
+
+          Console::setStyle();
+        } else {
+          printf(" %2d %3s %25s %3.3f %3.3f %7.3f %7.3f\n",
+            driver.position,
+            driver.carNumStr,
+            driver.driverName,
+            driver.gapToLeader,
+            driver.gapToLeaderF2, driver.lapTimeLast, driver.lapTimeCurrent);
+        }
         // printf(" %2d %2d %10s %3s %7.3f %2d %2d %2d %6.3f %2d %8.2f %5.2f %2d %2d %2d %2d %7.3f %7.3f %7.3f %7.3f %2d %d %2d "
         //        "%2d %2d 0x%02x\n",
         //        driver.position,
@@ -489,7 +632,7 @@ namespace {
 
     const auto isConnected = LiveClient::GetInstance().isConnected();
     if (wasConnected != isConnected) {
-      setCursorPosition(0, 1);
+      Console::setCursorPosition(0, 1);
       if (isConnected) {
         printf("Connected to iRacing              \n");
         ResetState(true);
@@ -505,7 +648,7 @@ namespace {
   void setRelativeViewMode() {
     gLapTimingData.viewMode = ViewMode::Relative;
 
-    auto driverIndexes = GetDriverIndexes();
+    auto driverIndexes = GetDriverPositionIndexes();
     if (driverIndexes.empty())
       return;
 
@@ -519,7 +662,7 @@ namespace {
   void nextRelativeDriver() {
     gLapTimingData.viewMode = ViewMode::Relative;
 
-    auto driverIndexes = GetDriverIndexes();
+    auto driverIndexes = GetDriverPositionIndexes();
     if (driverIndexes.empty())
       return;
 
@@ -542,10 +685,6 @@ namespace {
     } else {
       gLapTimingData.relativeToDriverIndex = driverIndexes[0];
     }
-
-
-
-
 
   }
 

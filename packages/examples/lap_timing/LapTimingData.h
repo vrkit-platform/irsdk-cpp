@@ -7,7 +7,7 @@ constexpr int kMaxNameLen{64};
 enum class SessionType: std::int32_t {
   Unknown = -1,
   Practice,
-  Qualifying,
+  Qualify,
   Race
 };
 
@@ -27,11 +27,12 @@ struct DriverEntry {
   int lap{-1};
   int position{-1};
   int classPosition{-1};
-  float gapToLeader{-1};
-  float gapToLeaderF2{-1};
-  float gapToNext{-1};
-  float lapDistPct{-1};
-  float lapDistPctLast{-1};
+  double gapToRelative{-1};
+  double gapToLeader{-1};
+  double gapToLeaderF2{-1};
+  double gapToNext{-1};
+  double lapDistPct{-1};
+  double lapDistPctLast{-1};
 
   double totalDistPct {-1};
   double lapTimeLast{-1};
@@ -44,6 +45,7 @@ struct DriverEntry {
     classId = -1;
     classPosition = -1;
     gapToLeader = -1;
+    gapToRelative = -1;
     gapToNext = -1;
     gapToLeaderF2 = -1;
     totalDistPct = -1;
@@ -60,6 +62,13 @@ struct LapTimingData {
   SessionType sessionType{SessionType::Unknown};
   double sessionTime{-1};
   double lastSessionTime{-1};
+
+  std::vector<IRacingSDK::SessionInfo::Session> eventSessions{};
+
+  /**
+   * Track length (meters)
+   */
+  double trackLength{-1};
 
   ViewMode viewMode{ViewMode::Standings};
 
