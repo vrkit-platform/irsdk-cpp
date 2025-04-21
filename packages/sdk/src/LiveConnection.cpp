@@ -56,6 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <IRacingSDK/LogInstance.h>
 #include <IRacingSDK/SessionInfo/SessionInfoMessage.h>
 #include <IRacingSDK/Types.h>
+#include <IRacingSDK/Utils/ThreadSafeMap.h>
 
 namespace IRacingSDK {
 
@@ -72,6 +73,10 @@ namespace IRacingSDK {
 
     constexpr double kCommTimeout = 30.0; // kCommTimeout after 30 seconds with no communication
     time_t gLastValidTime = 0;
+
+    Utils::ThreadSafeMap<std::uint32_t,std::shared_ptr<const VarDataHeader>> gDataHeaderMap{};
+    Utils::ThreadSafeMap<std::string,std::int32_t> gDataHeaderNameIndex{};
+    Utils::ThreadSafeMap<std::string,std::int32_t> gDataHeaderNameOffset{};
   } // namespace
 
   /**
@@ -106,6 +111,9 @@ namespace IRacingSDK {
       if (gSharedMemPtr) {
         if (!gDataValidEventHandle) {
           gDataValidEventHandle = OpenEventA(SYNCHRONIZE, false, Resources::IRSDK_DATAVALIDEVENTNAME);
+          gDataHeaderMap.clear();
+          gDataHeaderNameIndex.clear();
+          gDataHeaderNameOffset.clear();
           // if (!gDataValidEventHandle)
           //   gDataValidEventHandle = CreateEvent(NULL, true, false, Resources::IRSDK_DATAVALIDEVENTNAME);
           gLastTickCount = INT_MAX;
@@ -136,6 +144,10 @@ namespace IRacingSDK {
 
     if (gMemMapFileHandle)
       CloseHandle(gMemMapFileHandle);
+
+    gDataHeaderMap.clear();
+    gDataHeaderNameIndex.clear();
+    gDataHeaderNameOffset.clear();
 
     gDataValidEventHandle = nullptr;
     gSharedMemPtr = nullptr;
@@ -400,11 +412,16 @@ namespace IRacingSDK {
    * @return A pointer to the `VarDataHeader` entry if successful,
    *         or nullptr if the connection is not initialized or the index is invalid.
    */
-  const VarDataHeader *LiveConnection::getVarHeaderEntry(uint32_t index) {
+  std::shared_ptr<const VarDataHeader> LiveConnection::getVarHeaderEntry(uint32_t index) {
     if (!gIsInitialized || index >= gDataHeader->numVars)
       return nullptr;
 
-    return &((VarDataHeader *)(gSharedMemPtr + gDataHeader->varHeaderOffset))[index];
+    return gDataHeaderMap.getOrInsert(index, [index] {
+      VarDataHeader * mappedHeader = &((VarDataHeader *)(gSharedMemPtr + gDataHeader->varHeaderOffset))[index];
+      auto header = std::make_shared<VarDataHeader>();
+      std::memcpy(header.get(), mappedHeader, sizeof(VarDataHeader));
+      return header;
+    });
   }
 
   /**
@@ -420,17 +437,16 @@ namespace IRacingSDK {
    * @param name The name of the variable to search for, provided as a string view.
    * @return The index of the variable if found, or -1 if the variable is not present or the input is invalid.
    */
-  int LiveConnection::varNameToIndex(const std::string_view &name) {
-    if (!name.empty()) {
+  std::int32_t LiveConnection::varNameToIndex(const std::string &name) {
+    return gDataHeaderNameIndex.getOrInsert(name, [&] {
       for (int index = 0; index < gDataHeader->numVars; index++) {
-        const VarDataHeader *varDataHeader = getVarHeaderEntry(index);
+        auto varDataHeader = getVarHeaderEntry(index);
         if (varDataHeader && 0 == strncmp(name.data(), varDataHeader->name, Resources::MaxStringLength)) {
           return index;
         }
       }
-    }
-
-    return -1;
+      return -1;
+    });
   }
 
   /**
@@ -449,17 +465,16 @@ namespace IRacingSDK {
    * @param name The name of the variable to search for, as a string view.
    * @return Integer offset of the variable if found, or -1 if the variable is not found or invalid.
    */
-  int LiveConnection::varNameToOffset(const std::string_view &name) {
-    if (!name.empty()) {
+  std::int32_t LiveConnection::varNameToOffset(const std::string &name) {
+    return gDataHeaderNameOffset.getOrInsert(name, [&] {
       for (int index = 0; index < gDataHeader->numVars; index++) {
-        const VarDataHeader *varDataHeader = getVarHeaderEntry(index);
+        auto varDataHeader = getVarHeaderEntry(index);
         if (varDataHeader && 0 == strncmp(name.data(), varDataHeader->name, Resources::MaxStringLength)) {
           return varDataHeader->offset;
         }
       }
-    }
-
-    return -1;
+      return -1;
+    });
   }
 
 
@@ -470,10 +485,10 @@ namespace IRacingSDK {
    * by utilizing a static variable to store the result of the registration. The registered message
    * ID can then be used in broadcasting and sending messages to iRacing.
    *
-   * @return An unsigned integer representing the unique broadcast message ID, or 0 if the registration fails.
+   * @return An std::uint32_t representing the unique broadcast message ID, or 0 if the registration fails.
    */
-  unsigned int getBroadcastMessageId() {
-    static unsigned int msgId = RegisterWindowMessage(Resources::BroadcastMessageName);
+  std::uint32_t getBroadcastMessageId() {
+    static std::uint32_t msgId = RegisterWindowMessage(Resources::BroadcastMessageName);
 
     return msgId;
   }
@@ -512,7 +527,7 @@ namespace IRacingSDK {
    * @param var2 Argument 2
    */
   void LiveConnection::broadcastMessage(BroadcastMessage msg, int var1, int var2) {
-    static unsigned int msgId = getBroadcastMessageId();
+    static std::uint32_t msgId = getBroadcastMessageId();
     auto msgType = magic_enum::enum_underlying(msg);
     if (msgId && msgType >= 0 && msgType < magic_enum::enum_underlying(BroadcastMessage::Last)) {
       SendNotifyMessage(HWND_BROADCAST, msgId, MAKELONG(msg, var1), var2);

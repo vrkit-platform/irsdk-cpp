@@ -1,44 +1,45 @@
 # System Dependencies
-set(
+SET(
   SYSTEM_LIBRARIES
   Winmm
 )
 
 # Generate libraries from system library list
-foreach(LIBRARY ${SYSTEM_LIBRARIES})
-  add_library("System::${LIBRARY}" INTERFACE IMPORTED GLOBAL)
-  set_property(
+FOREACH(LIBRARY ${SYSTEM_LIBRARIES})
+  ADD_LIBRARY("System::${LIBRARY}" INTERFACE IMPORTED GLOBAL)
+  SET_PROPERTY(
     TARGET "System::${LIBRARY}"
     PROPERTY IMPORTED_LIBNAME "${LIBRARY}"
   )
-endforeach()
+ENDFOREACH()
 
-# VCPKG Dependencies
-set(DEP_PACKAGES
-  Microsoft.GSL
-  fmt
-  spdlog
-  yaml-cpp
-  cppwinrt
-  magic_enum
-  nlohmann_json)
+IF(NOT TARGET Microsoft::CppWinRT)
+  # VCPKG Dependencies
+  SET(DEP_PACKAGES
+    Microsoft.GSL
+    fmt
+    spdlog
+    yaml-cpp
+    cppwinrt
+    magic_enum
+    nlohmann_json)
 
-foreach(depPkgName ${DEP_PACKAGES})
-  find_package(${depPkgName} CONFIG REQUIRED)
-endforeach()
-
+  FOREACH(depPkgName ${DEP_PACKAGES})
+    FIND_PACKAGE(${depPkgName} CONFIG REQUIRED)
+  ENDFOREACH()
+ENDIF()
 
 # Create Similar Aliases for each Dependency
-set(DEP_YAML yaml-cpp::yaml-cpp)
-set(DEP_JSON nlohmann_json::nlohmann_json)
-set(DEP_MAGICENUM magic_enum::magic_enum)
-set(DEP_GSL Microsoft.GSL::GSL)
-set(DEP_LOG spdlog::spdlog)
-set(DEP_SYS_WINMM System::Winmm)
-set(DEP_FMT fmt::fmt)
-set(DEP_LOG spdlog::spdlog ${DEP_FMT})
+SET(DEP_YAML yaml-cpp::yaml-cpp)
+SET(DEP_JSON nlohmann_json::nlohmann_json)
+SET(DEP_MAGICENUM magic_enum::magic_enum)
+SET(DEP_GSL Microsoft.GSL::GSL)
+SET(DEP_LOG spdlog::spdlog)
+SET(DEP_SYS_WINMM System::Winmm)
+SET(DEP_FMT fmt::fmt)
+SET(DEP_LOG spdlog::spdlog ${DEP_FMT})
 
-set(ALL_APP_DEPS
+SET(ALL_APP_DEPS
   ${DEP_JSON}
   ${DEP_MAGICENUM}
   ${DEP_FMT}
@@ -48,7 +49,7 @@ set(ALL_APP_DEPS
   ${DEP_SYS_WINMM}
 )
 
-set(ALL_SDK_DEPS
+SET(ALL_SDK_DEPS
   ${DEP_MAGICENUM}
   ${DEP_GSL}
   ${DEP_FMT}
@@ -57,21 +58,20 @@ set(ALL_SDK_DEPS
   ${DEP_SYS_WINMM}
 )
 
-function(IRSDKCPP_TARGET_LINK_SDK_LIBS TARGET)
-  target_link_libraries(${TARGET} PUBLIC ${ALL_SDK_DEPS})
-endfunction()
+FUNCTION(IRSDKCPP_TARGET_LINK_SDK_LIBS TARGET)
+  TARGET_LINK_LIBRARIES(${TARGET} PUBLIC ${ALL_SDK_DEPS})
+ENDFUNCTION()
 
-function(IRSDK_CPP_CONFIGURE_APP_LIBS TARGET)
-  target_link_libraries(${TARGET} PRIVATE ${ALL_APP_DEPS})
-endfunction()
+FUNCTION(IRSDK_CPP_CONFIGURE_APP_LIBS TARGET)
+  TARGET_LINK_LIBRARIES(${TARGET} PRIVATE ${ALL_APP_DEPS})
+ENDFUNCTION()
 
-
-if(IRSDKCPP_BUILD_TESTS)
+IF(IRSDKCPP_BUILD_TESTS)
   FIND_PACKAGE(GTest CONFIG REQUIRED)
-  set(DEP_GTEST_MAIN GTest::gtest GTest::gtest_main GTest::gmock)
-  set(DEP_GTEST GTest::gtest GTest::gmock)
+  SET(DEP_GTEST_MAIN GTest::gtest GTest::gtest_main GTest::gmock)
+  SET(DEP_GTEST GTest::gtest GTest::gmock)
 
-  function(IRSDK_CPP_CONFIGURE_TESTS_EXE TARGET)
-    target_link_libraries(${TARGET} ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
-  endfunction()
-endif()
+  FUNCTION(IRSDK_CPP_CONFIGURE_TESTS_EXE TARGET)
+    TARGET_LINK_LIBRARIES(${TARGET} ${ALL_APP_DEPS} ${DEP_GTEST_MAIN})
+  ENDFUNCTION()
+ENDIF()

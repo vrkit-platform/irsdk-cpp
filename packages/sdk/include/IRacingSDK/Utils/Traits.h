@@ -4,24 +4,9 @@
 
 #pragma once
 
-#include <format>
-#include <string>
-
-// #include <boost/type_index.hpp>
-
+#include <type_traits>
 
 namespace IRacingSDK::Utils {
-
-// template<typename T>
-//   struct PrettyType {
-//     std::string name() {
-//       auto& info = boost::typeindex::type_id_with_cvr<T>().type_info();
-//       auto id = boost::typeindex::type_id_with_cvr<T>();
-//       std::string prettyName = id.pretty_name();
-//       std::string name = id.name();
-//       return name;
-//     };
-//   };
 
 template<typename, typename = void>
 constexpr bool is_container{};

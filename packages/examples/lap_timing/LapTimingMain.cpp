@@ -483,13 +483,8 @@ namespace {
 
     std::print(std::cout, " Session ({}): {}/{}", sessionNum, sessionName, magic_enum::enum_name(sessionType));
 
-    printf(" Coordinate: %f,%f", gLongitude.getDouble(), gLatitude.getDouble());
-    printf(" LapsComplete: %03d", gRaceLaps.getInt());
-
-    if (gSessionLapsRemainEx.getInt() < 32767)
-      printf(" LapsRemain: %03d", gSessionLapsRemainEx.getInt());
-    else
-      printf(" LapsRemain: Unlimited");
+    // printf(" Coordinate: %f,%f", gLongitude.getDouble(), gLatitude.getDouble());
+    printf(" LapsComplete: %03d/%03d", gRaceLaps.getInt(), gSessionLapsRemainEx.getInt() < SHRT_MAX ? gSessionLapsRemainEx.getInt() : 0);
 
     printf(" TimeRemain: ");
     if (gSessionTimeRemain.getDouble() < 604800.0f)
@@ -646,11 +641,14 @@ namespace {
   }
 
   void setRelativeViewMode() {
+    Console::clearScreen();
     gLapTimingData.viewMode = ViewMode::Relative;
 
     auto driverIndexes = GetDriverPositionIndexes();
-    if (driverIndexes.empty())
+    if (driverIndexes.empty()) {
+      gLapTimingData.relativeToDriverIndex = -1;
       return;
+    }
 
     if (ContainsValue(driverIndexes, gLapTimingData.relativeToDriverIndex)) {
       return;
@@ -813,6 +811,7 @@ int main(int argc, char *argv[]) {
         case 's':
           std::println(std::cout, "Mode change to 'standings'");
           gLapTimingData.viewMode = ViewMode::Standings;
+          Console::clearScreen();
           break;
         default:
           std::println(std::cout, "Key press ignored: {}", c);

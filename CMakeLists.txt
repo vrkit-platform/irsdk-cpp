@@ -40,6 +40,7 @@ OPTION(IRSDKCPP_BUILD_DOCS "Generate Doxygen Documentation" OFF)
 OPTION(IRSDKCPP_BUILD_TESTS "Build tests" OFF)
 OPTION(IRSDKCPP_BUILD_EXAMPLES "Build examples" OFF)
 OPTION(IRSDKCPP_BUILD_SHARED "Build shared libs" OFF)
+OPTION(IRSDKCPP_INSTALL_READY "Prepare project for installation" ON)
 
 cmake_dependent_option(IRSDKCPP_MSVC_SHARED_RT
   "MSVC: Build irsdkcpp with shared runtime libs (/MD)" ON

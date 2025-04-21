@@ -54,13 +54,13 @@ namespace IRacingSDK {
     uint32_t getSessionUpdateCount(); // incrementing index that indicates new session info string
 
     const VarDataHeader *getVarHeaderPtr();
-    const VarDataHeader *getVarHeaderEntry(uint32_t index);
+    std::shared_ptr<const VarDataHeader> getVarHeaderEntry(uint32_t index);
 
     std::optional<std::int32_t> getSessionTickCount();
 
-    int varNameToIndex(const std::string_view &name);
+    std::int32_t varNameToIndex(const std::string &name);
 
-    int varNameToOffset(const std::string_view &name);
+    std::int32_t varNameToOffset(const std::string &name);
 
     void broadcastMessage(BroadcastMessage msg, int var1, int var2, int var3);
 

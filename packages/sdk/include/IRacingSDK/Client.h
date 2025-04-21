@@ -70,49 +70,49 @@ namespace IRacingSDK {
     virtual const VarHeaders &getVarHeaders() = 0;
     
 
-    virtual Opt<const VarDataHeader *> getVarHeader(uint32_t idx) = 0;
-    virtual Opt<const VarDataHeader *> getVarHeader(const std::string_view &name) = 0;
-    virtual Opt<const VarDataHeader*> getVarHeader(KnownVarName name);
+    virtual Opt<std::shared_ptr<const VarDataHeader>> getVarHeader(uint32_t idx) = 0;
+    virtual Opt<std::shared_ptr<const VarDataHeader>> getVarHeader(const std::string &name) = 0;
+    virtual Opt<std::shared_ptr<const VarDataHeader>> getVarHeader(KnownVarName name);
 
-    virtual std::optional<uint32_t> getVarIdx(const std::string_view &name) = 0;
+    virtual std::optional<uint32_t> getVarIdx(const std::string &name) = 0;
     virtual std::optional<uint32_t> getVarIdx(KnownVarName name);
 
     // get info on the var
-    virtual std::optional<std::string_view> getVarName(uint32_t idx) = 0;
-    virtual std::optional<std::string_view> getVarDesc(uint32_t idx) = 0;
-    virtual std::optional<std::string_view> getVarUnit(uint32_t idx) = 0;
+    virtual std::optional<std::string> getVarName(uint32_t idx) = 0;
+    virtual std::optional<std::string> getVarDesc(uint32_t idx) = 0;
+    virtual std::optional<std::string> getVarUnit(uint32_t idx) = 0;
 
     // what is the base type of the data
     virtual std::optional<VarDataType> getVarType(uint32_t idx) = 0;
-    virtual std::optional<VarDataType> getVarType(const std::string_view &name) = 0;
+    virtual std::optional<VarDataType> getVarType(const std::string &name) = 0;
     virtual std::optional<VarDataType> getVarType(KnownVarName name);
 
     // how many elements in array, or 1 if not an array
     virtual std::optional<uint32_t> getVarCount(uint32_t idx) = 0;
-    virtual std::optional<uint32_t> getVarCount(const std::string_view &name) = 0;
+    virtual std::optional<uint32_t> getVarCount(const std::string &name) = 0;
     virtual std::optional<uint32_t> getVarCount(KnownVarName name);
 
     // idx is the variables index, entry is the array offset, or 0 if not an array element
     // will convert data to requested type
     virtual std::optional<bool> getVarBool(uint32_t idx, uint32_t entry = 0) = 0;
-    virtual std::optional<bool> getVarBool(const std::string_view &name, uint32_t entry = 0) = 0;
+    virtual std::optional<bool> getVarBool(const std::string &name, uint32_t entry = 0) = 0;
     virtual std::optional<bool> getVarBool(KnownVarName name, uint32_t entry = 0);
 
     virtual std::optional<int> getVarInt(uint32_t idx, uint32_t entry = 0) = 0;
-    virtual std::optional<int> getVarInt(const std::string_view &name, uint32_t entry = 0) = 0;
+    virtual std::optional<int> getVarInt(const std::string &name, uint32_t entry = 0) = 0;
     virtual std::optional<int> getVarInt(KnownVarName name, uint32_t entry = 0);
 
     virtual std::optional<float> getVarFloat(uint32_t idx, uint32_t entry = 0) = 0;
-    virtual std::optional<float> getVarFloat(const std::string_view &name, uint32_t entry = 0) = 0;
+    virtual std::optional<float> getVarFloat(const std::string &name, uint32_t entry = 0) = 0;
     virtual std::optional<float> getVarFloat(KnownVarName name, uint32_t entry = 0);
 
 
     virtual std::optional<double> getVarDouble(uint32_t idx, uint32_t entry = 0) = 0;
-    virtual std::optional<double> getVarDouble(const std::string_view &name, uint32_t entry = 0) = 0;
+    virtual std::optional<double> getVarDouble(const std::string &name, uint32_t entry = 0) = 0;
     virtual std::optional<double> getVarDouble(KnownVarName name, uint32_t entry = 0);
 
 
-    virtual Expected<std::string_view> getSessionInfoStr() = 0;
+    virtual Expected<std::string> getSessionInfoStr() = 0;
     virtual std::optional<std::int32_t> getSessionTicks() = 0;
     virtual std::optional<std::int32_t> getSessionInfoUpdateCount() = 0;
     virtual std::optional<WeakSessionInfoWithUpdateCount> getSessionInfoWithUpdateCount() = 0;

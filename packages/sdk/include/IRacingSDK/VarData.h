@@ -2,17 +2,14 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include <tchar.h>
-#include <windows.h>
 
-#include "ErrorTypes.h"
-#include "Resources.h"
-#include "Types.h"
-#include <IRacingSDK/Utils/LUT.h>
+#include <IRacingSDK/Resources.h>
+#include <IRacingSDK/Types.h>
 
 namespace IRacingSDK {
 
 
-struct VarDataHeader {
+  struct VarDataHeader {
     /**
      * @brief Data Type
      */
@@ -36,23 +33,25 @@ struct VarDataHeader {
     char unit[Resources::MaxStringLength]; // something like "kg/m^2"
 
     void clear() {
-        type = VarDataType::Char;
-        offset = 0;
-        count = 0;
-        countAsTime = false;
-        std::memset(name, 0, sizeof(name));
-        std::memset(desc, 0, sizeof(desc));
-        std::memset(unit, 0, sizeof(unit));
+      type = VarDataType::Char;
+      offset = 0;
+      count = 0;
+      countAsTime = false;
+      std::memset(name, 0, sizeof(name));
+      std::memset(desc, 0, sizeof(desc));
+      std::memset(unit, 0, sizeof(unit));
     }
-};
+  };
 
-struct VarDataBufDescriptor {
+  using VarDataHeaderPtr = std::shared_ptr<const VarDataHeader>;
+
+  struct VarDataBufDescriptor {
     int tickCount{}; // used to detect changes in data
     int bufOffset{}; // offset from header
-    int pad[2]{};    // (16 byte align)
-};
+    int pad[2]{}; // (16 byte align)
+  };
 
-using VarHeaders = std::vector<VarDataHeader>;
+  using VarHeaders = std::vector<VarDataHeader>;
 
 
 }

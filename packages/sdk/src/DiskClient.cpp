@@ -216,24 +216,28 @@ namespace IRacingSDK {
 
     varBuf_.resize(sampleDataSize_);
     if (std::fseek(ibtFile_, sampleDataOffset_, SEEK_SET)) {
-        return false;
+      return false;
     }
 
     while (next()) {
-        auto tickRes = getVarInt(KnownVarName::SessionTick);
-        if (tickRes) {
-            auto tick = tickRes.value();
-            if (!Win32::IsWindowsMagicNumber(tick) && tick >= 0) {
-                sampleIndexValidOffset_ = sampleIndex_.load();
-                tickSampleIndexOffset_ = tick;
-                break;
-            }
+      auto tickRes = getVarInt(KnownVarName::SessionTick);
+      if (tickRes) {
+        auto tick = tickRes.value();
+        if (!Win32::IsWindowsMagicNumber(tick) && tick >= 0) {
+          sampleIndexValidOffset_ = sampleIndex_.load();
+          tickSampleIndexOffset_ = tick;
+          break;
         }
+      }
     }
 
 
     sampleIndex_ = sampleIndexValidOffset_;
-    if (tickSampleIndexOffset_ == -1 || std::fseek(ibtFile_, sampleDataOffset_ + (header_.bufLen * sampleIndex_), SEEK_SET)) {
+    if (tickSampleIndexOffset_ == -1 || std::fseek(
+      ibtFile_,
+      sampleDataOffset_ + (header_.bufLen * sampleIndex_),
+      SEEK_SET
+    )) {
       return false;
     }
     L->info("IBT disk client ready, sampleDataSize {} bytes", sampleDataSize_);
@@ -259,7 +263,8 @@ namespace IRacingSDK {
     }
 
     if (hasSessionInfoFileOverride()) {
-      std:int32_t tickCount = 0;
+    std:
+      int32_t tickCount = 0;
       if (!isAvailable()) {
         L->warn("Disk client is not yet ready, using defacto first session info override");
       } else {
@@ -277,14 +282,18 @@ namespace IRacingSDK {
 
       auto sessionInfoOverrideRes = findSessionInfoFileOverride(tickCount);
       if (!sessionInfoOverrideRes) {
-        L->warn("Session info override returned no value, but this client has session info overrides or tick is invalid");
+        L->warn(
+          "Session info override returned no value, but this client has session info overrides or tick is invalid"
+        );
         return std::unexpected(
           GeneralError("Session info override returned no value, but this client has session info overrides")
         );
       }
 
       auto& sessionInfoOverride = sessionInfoOverrideRes.value();
-      if (previousSessionInfoOverride_ && std::get<0>(sessionInfoOverride) <= std::get<0>(previousSessionInfoOverride_.value())) {
+      if (previousSessionInfoOverride_ && std::get<0>(sessionInfoOverride) <= std::get<0>(
+        previousSessionInfoOverride_.value()
+      )) {
         L->debug("Session info override is the same as previous, skipping");
         return false;
       }
@@ -422,8 +431,9 @@ namespace IRacingSDK {
     std::scoped_lock lock(ibtFileMutex_);
     sampleIndex = std::max<std::int32_t>(
       static_cast<std::int32_t>(sampleIndexValidOffset_),
-      static_cast<std::int32_t>(sampleIndex));
-    
+      static_cast<std::int32_t>(sampleIndex)
+    );
+
     if (!isFileOpen() || sampleIndex >= getSampleCount()) return false;
 
     if (std::fseek(ibtFile_, sampleDataOffset_ + (header_.bufLen * sampleIndex), SEEK_SET)) return false;
@@ -457,28 +467,16 @@ namespace IRacingSDK {
         return false;
       }
     }
+
     return false;
   }
 
-//  bool DiskClient::current() {
-//    std::scoped_lock lock(ibtFileMutex_);
-//    if (hasNext()) {
-//      varBuf_.reset();
-//      if (FileReadDataFully(varBuf_.data(), 1, header_.bufLen, ibtFile_)) {
-//        ++sampleIndex_;
-//        return true;
-//      }
-//    }
-//    return false;
-//  }
-//
   bool DiskClient::next(bool readOnly) {
     std::scoped_lock lock(ibtFileMutex_);
     if (hasNext()) {
       varBuf_.reset();
       if (FileReadDataFully(varBuf_.data(), 1, header_.bufLen, ibtFile_)) {
-        if (!readOnly)
-          ++sampleIndex_;
+        if (!readOnly) ++sampleIndex_;
         return true;
       }
     }
@@ -492,7 +490,7 @@ namespace IRacingSDK {
     return header_.numVars;
   }
 
-  std::optional<uint32_t> DiskClient::getVarIdx(const std::string_view& name) {
+  std::optional<uint32_t> DiskClient::getVarIdx(const std::string& name) {
     if (isFileOpen() && !name.empty()) {
       for (uint32_t idx = 0; idx < getNumVars(); idx++) {
         if (std::strcmp(name.data(), varHeaders_[idx].name) == 0) {
@@ -514,7 +512,7 @@ namespace IRacingSDK {
   }
 
   // get info on the var
-  Opt<std::string_view> DiskClient::getVarName(uint32_t idx) {
+  Opt<std::string> DiskClient::getVarName(uint32_t idx) {
     if (isFileOpen() && isVarIndexOk(idx)) {
       return varHeaders_[idx].name;
     }
@@ -522,7 +520,7 @@ namespace IRacingSDK {
     return std::nullopt;
   }
 
-  Opt<std::string_view> DiskClient::getVarDesc(uint32_t idx) {
+  Opt<std::string> DiskClient::getVarDesc(uint32_t idx) {
     if (isFileOpen() && isVarIndexOk(idx)) {
       return varHeaders_[idx].desc;
     }
@@ -530,7 +528,7 @@ namespace IRacingSDK {
     return std::nullopt;
   }
 
-  Opt<std::string_view> DiskClient::getVarUnit(uint32_t idx) {
+  Opt<std::string> DiskClient::getVarUnit(uint32_t idx) {
     if (isFileOpen() && isVarIndexOk(idx)) {
       return varHeaders_[idx].unit;
     }
@@ -550,25 +548,25 @@ namespace IRacingSDK {
     if (isFileOpen() && isVarIndexOk(idx, entry)) {
       const char* data = varBuf_.data() + varHeaders_[idx].offset;
       switch (varHeaders_[idx].type) {
-      // 1 byte
-      case VarDataType::Char:
-      case VarDataType::Bool:
-        return (((const char*)data)[entry]) != 0;
+        // 1 byte
+        case VarDataType::Char:
+        case VarDataType::Bool:
+          return (((const char*)data)[entry]) != 0;
 
-      // 4 bytes
-      case VarDataType::Int32:
-      case VarDataType::Bitmask:
-        return (reinterpret_cast<const int*>(data)[entry]) != 0;
+        // 4 bytes
+        case VarDataType::Int32:
+        case VarDataType::Bitmask:
+          return (reinterpret_cast<const int*>(data)[entry]) != 0;
 
-      // test float/double for greater than 1.0 so that
-      // we have a chance of this being usefull
-      // technically there is no right conversion...
-      case VarDataType::Float:
-        return (reinterpret_cast<const float*>(data)[entry]) >= 1.0f;
+        // test float/double for greater than 1.0 so that
+        // we have a chance of this being usefull
+        // technically there is no right conversion...
+        case VarDataType::Float:
+          return (reinterpret_cast<const float*>(data)[entry]) >= 1.0f;
 
-      // 8 bytes
-      case VarDataType::Double:
-        return (reinterpret_cast<const double*>(data)[entry]) >= 1.0;
+        // 8 bytes
+        case VarDataType::Double:
+          return (reinterpret_cast<const double*>(data)[entry]) >= 1.0;
       }
     }
 
@@ -579,22 +577,22 @@ namespace IRacingSDK {
     if (isFileOpen() && isVarIndexOk(idx, entry)) {
       const char* data = varBuf_.data() + varHeaders_[idx].offset;
       switch (varHeaders_[idx].type) {
-      // 1 byte
-      case VarDataType::Char:
-      case VarDataType::Bool:
-        return (int)(((const char*)data)[entry]);
+        // 1 byte
+        case VarDataType::Char:
+        case VarDataType::Bool:
+          return (int)(((const char*)data)[entry]);
 
-      // 4 bytes
-      case VarDataType::Int32:
-      case VarDataType::Bitmask:
-        return (int)(((const int*)data)[entry]);
+        // 4 bytes
+        case VarDataType::Int32:
+        case VarDataType::Bitmask:
+          return (int)(((const int*)data)[entry]);
 
-      case VarDataType::Float:
-        return static_cast<int>(((const float*)data)[entry]);
+        case VarDataType::Float:
+          return static_cast<int>(((const float*)data)[entry]);
 
-      // 8 bytes
-      case VarDataType::Double:
-        return static_cast<int>(((const double*)data)[entry]);
+        // 8 bytes
+        case VarDataType::Double:
+          return static_cast<int>(((const double*)data)[entry]);
       }
     }
 
@@ -605,22 +603,22 @@ namespace IRacingSDK {
     if (isFileOpen() && isVarIndexOk(idx, entry)) {
       const char* data = varBuf_.data() + varHeaders_[idx].offset;
       switch (varHeaders_[idx].type) {
-      // 1 byte
-      case VarDataType::Char:
-      case VarDataType::Bool:
-        return (float)(((const char*)data)[entry]);
+        // 1 byte
+        case VarDataType::Char:
+        case VarDataType::Bool:
+          return (float)(((const char*)data)[entry]);
 
-      // 4 bytes
-      case VarDataType::Int32:
-      case VarDataType::Bitmask:
-        return static_cast<float>(((const int*)data)[entry]);
+        // 4 bytes
+        case VarDataType::Int32:
+        case VarDataType::Bitmask:
+          return static_cast<float>(((const int*)data)[entry]);
 
-      case VarDataType::Float:
-        return (float)(((const float*)data)[entry]);
+        case VarDataType::Float:
+          return (float)(((const float*)data)[entry]);
 
-      // 8 bytes
-      case VarDataType::Double:
-        return static_cast<float>(((const double*)data)[entry]);
+        // 8 bytes
+        case VarDataType::Double:
+          return static_cast<float>(((const double*)data)[entry]);
       }
     }
 
@@ -631,22 +629,22 @@ namespace IRacingSDK {
     if (isFileOpen() && isVarIndexOk(idx, entry)) {
       const char* data = varBuf_.data() + varHeaders_[idx].offset;
       switch (varHeaders_[idx].type) {
-      // 1 byte
-      case VarDataType::Char:
-      case VarDataType::Bool:
-        return (double)(((const char*)data)[entry]);
+        // 1 byte
+        case VarDataType::Char:
+        case VarDataType::Bool:
+          return (double)(((const char*)data)[entry]);
 
-      // 4 bytes
-      case VarDataType::Int32:
-      case VarDataType::Bitmask:
-        return (double)(((const int*)data)[entry]);
+        // 4 bytes
+        case VarDataType::Int32:
+        case VarDataType::Bitmask:
+          return (double)(((const int*)data)[entry]);
 
-      case VarDataType::Float:
-        return (double)(((const float*)data)[entry]);
+        case VarDataType::Float:
+          return (double)(((const float*)data)[entry]);
 
-      // 8 bytes
-      case VarDataType::Double:
-        return (double)(((const double*)data)[entry]);
+        // 8 bytes
+        case VarDataType::Double:
+          return (double)(((const double*)data)[entry]);
       }
     }
 
@@ -654,7 +652,7 @@ namespace IRacingSDK {
   }
 
   //path is in the form of "DriverInfo:Drivers:CarIdx:{%d}UserName:"
-  //int DiskClient::getSessionStrVal(const std::string_view &path, char *val, int valLen) {
+  //int DiskClient::getSessionStrVal(const std::string &path, char *val, int valLen) {
   //    if (isFileOpen() && !path.empty() && val && valLen > 0) {
   //        const char *tVal = nullptr;
   //        int tValLen = 0;
@@ -692,32 +690,32 @@ namespace IRacingSDK {
     return sampleIndex_;
   }
 
-  Opt<VarDataType> DiskClient::getVarType(const std::string_view& name) {
+  Opt<VarDataType> DiskClient::getVarType(const std::string& name) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarType(res.value()) : std::nullopt;
   }
 
-  Opt<uint32_t> DiskClient::getVarCount(const std::string_view& name) {
+  Opt<uint32_t> DiskClient::getVarCount(const std::string& name) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarCount(res.value()) : std::nullopt;
   }
 
-  Opt<bool> DiskClient::getVarBool(const std::string_view& name, uint32_t entry) {
+  Opt<bool> DiskClient::getVarBool(const std::string& name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarBool(res.value(), entry) : std::nullopt;
   }
 
-  Opt<int> DiskClient::getVarInt(const std::string_view& name, uint32_t entry) {
+  Opt<int> DiskClient::getVarInt(const std::string& name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarInt(res.value(), entry) : std::nullopt;
   }
 
-  Opt<float> DiskClient::getVarFloat(const std::string_view& name, uint32_t entry) {
+  Opt<float> DiskClient::getVarFloat(const std::string& name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarFloat(res.value(), entry) : std::nullopt;
   }
 
-  Opt<double> DiskClient::getVarDouble(const std::string_view& name, uint32_t entry) {
+  Opt<double> DiskClient::getVarDouble(const std::string& name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res.has_value() ? getVarDouble(res.value(), entry) : std::nullopt;
   }
@@ -738,7 +736,7 @@ namespace IRacingSDK {
     return tickSampleIndexOffset_;
   }
 
-  Expected<std::string_view> DiskClient::getSessionInfoStr() {
+  Expected<std::string> DiskClient::getSessionInfoStr() {
     if (!sessionInfoBuf_) return MakeUnexpected<GeneralError>("Session str not available");
 
     return sessionInfoBuf_->data();
@@ -773,10 +771,10 @@ namespace IRacingSDK {
       return false;
     }
 
-    std::memcpy(target, varBuf_.data(), size);
-    return true;
 
-    return false;
+    return !!std::memcpy(target, varBuf_.data(), size);
+
+
   }
 
   bool DiskClient::hasSessionInfoFileOverride() {
@@ -807,20 +805,49 @@ namespace IRacingSDK {
     return isFileOpen();
   }
 
-  Opt<const VarDataHeader*> DiskClient::getVarHeader(uint32_t idx) {
-    if (isAvailable() && isVarIndexOk(idx)) {
-      auto& headers = getVarHeaders();
-      return &headers[idx];
+  Opt<VarDataHeaderPtr> DiskClient::getVarHeader(uint32_t idx) {
+    if (isAvailable()) {
+      return dataHeaderMap_.getOrInsert(
+        idx,
+        [&] () -> VarDataHeaderPtr {
+          if (!isVarIndexOk(idx)) {
+            return VarDataHeaderPtr{nullptr};
+          }
+          auto& mappedHeaders = getVarHeaders();
+          auto mappedHeader = &mappedHeaders[idx];
+          auto header = std::make_shared<VarDataHeader>();
+          std::memcpy(header.get(), mappedHeader, sizeof(VarDataHeader));
+          return header;
+        }
+      );
+
+
     }
 
     return std::nullopt;
   }
 
-  Opt<const VarDataHeader*> DiskClient::getVarHeader(const std::string_view& name) {
+  Opt<VarDataHeaderPtr> DiskClient::getVarHeader(const std::string& name) {
     if (isAvailable()) {
-      if (auto idx = getVarIdx(name)) {
-        return getVarHeader(idx.value());
-      }
+      auto numVars = getNumVars();
+      if (!numVars)
+        return std::nullopt;
+
+      auto idx = dataHeaderNameIndex_.getOrInsert(
+        name,
+        [&] {
+          for (int index = 0; index < numVars.value(); index++) {
+            auto varDataHeader = getVarHeader(index);
+            if (varDataHeader && 0 == strncmp(name.data(), varDataHeader.value()->name, Resources::MaxStringLength)) {
+              return index;
+            }
+          }
+          return -1;
+        }
+      );
+
+      if (idx >= 0) return getVarHeader(idx);
+
     }
 
     return std::nullopt;

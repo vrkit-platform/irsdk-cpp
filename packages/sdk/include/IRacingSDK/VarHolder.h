@@ -1,14 +1,9 @@
 #pragma once
 
 #include <magic_enum/magic_enum.hpp>
-#include <tchar.h>
-#include <windows.h>
 
-#include "ErrorTypes.h"
-#include "Resources.h"
-#include "Types.h"
 #include <IRacingSDK/Client.h>
-#include <IRacingSDK/Utils/LUT.h>
+#include <IRacingSDK/Types.h>
 
 namespace IRacingSDK {
     /**

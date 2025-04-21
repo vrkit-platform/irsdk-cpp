@@ -1,5 +1,4 @@
 #include <windows.h>
-#include <memoryapi.h>
 
 #include <cstring>
 #include <mutex>
@@ -36,6 +35,9 @@ namespace IRacingSDK {
 
       virtual ~LiveClientProvider() = default;
     };
+
+
+
   }
 
   /**
@@ -147,7 +149,7 @@ namespace IRacingSDK {
     //return conn.isConnected();
   }
 
-  Opt<uint32_t> LiveClient::getVarIdx(const std::string_view &name) {
+  Opt<uint32_t> LiveClient::getVarIdx(const std::string &name) {
     static auto &conn = LiveConnection::GetInstance();
     if (isConnected()) {
       return conn.varNameToIndex(name);
@@ -156,10 +158,11 @@ namespace IRacingSDK {
     return std::nullopt;
   }
 
-  Opt<const VarDataHeader *> LiveClient::getVarHeader(uint32_t idx) {
+  Opt<VarDataHeaderPtr> LiveClient::getVarHeader(std::uint32_t idx) {
     static auto &conn = LiveConnection::GetInstance();
-    const VarDataHeader *varHeader;
-    if (isConnected() && (varHeader = conn.getVarHeaderEntry(idx))) {
+
+    if (isConnected()) {
+      VarDataHeaderPtr varHeader = conn.getVarHeaderEntry(idx);
       return varHeader;
     }
     return std::nullopt;
@@ -178,7 +181,7 @@ namespace IRacingSDK {
   Opt<uint32_t> LiveClient::getVarCount(uint32_t idx) {
     auto &conn = LiveConnection::GetInstance();
     if (isConnected() && isVarIndexOk(idx)) {
-      const VarDataHeader *vh = conn.getVarHeaderEntry(idx);
+      VarDataHeaderPtr vh = conn.getVarHeaderEntry(idx);
       return vh->count;
     }
 
@@ -188,29 +191,29 @@ namespace IRacingSDK {
   Opt<bool> LiveClient::getVarBool(uint32_t idx, uint32_t entry) {
     auto &conn = LiveConnection::GetInstance();
     if (isConnected() && isVarIndexOk(idx, entry)) {
-      auto *vh = conn.getVarHeaderEntry(idx);
+      VarDataHeaderPtr vh = conn.getVarHeaderEntry(idx);
 
       const char *data = data_ + vh->offset;
       switch (vh->type) {
         // 1 byte
         case VarDataType::Char:
         case VarDataType::Bool:
-          return (((const char *) data)[entry]) != 0;
+          return data[entry] != 0;
 
         // 4 bytes
         case VarDataType::Int32:
         case VarDataType::Bitmask:
-          return (((const int *) data)[entry]) != 0;
+          return reinterpret_cast<const int*>(data)[entry] != 0;
 
         // test float/double for greater than 1.0 so that
-        // we have a chance of this being usefull
+        // we have a chance of this being useful
         // technically there is no right conversion...
         case VarDataType::Float:
-          return (reinterpret_cast<const float *>(data)[entry]) >= 1.0f;
+          return reinterpret_cast<const float *>(data)[entry] >= 1.0f;
 
         // 8 bytes
         case VarDataType::Double:
-          return (reinterpret_cast<const double *>(data)[entry]) >= 1.0;
+          return reinterpret_cast<const double *>(data)[entry] >= 1.0;
       }
     }
 
@@ -227,19 +230,19 @@ namespace IRacingSDK {
         // 1 byte
         case VarDataType::Char:
         case VarDataType::Bool:
-          return (int) (((const char *) data)[entry]);
+          return data[entry];
 
         // 4 bytes
         case VarDataType::Int32:
         case VarDataType::Bitmask:
-          return (int) (((const int *) data)[entry]);
+          return reinterpret_cast<const int*>(data)[entry];
 
         case VarDataType::Float:
-          return static_cast<int>(((const float *) data)[entry]);
+          return static_cast<int>(reinterpret_cast<const float*>(data)[entry]);
 
         // 8 bytes
         case VarDataType::Double:
-          return static_cast<int>(((const double *) data)[entry]);
+          return static_cast<int>(reinterpret_cast<const double*>(data)[entry]);
       }
     }
 
@@ -256,19 +259,19 @@ namespace IRacingSDK {
         // 1 byte
         case VarDataType::Char:
         case VarDataType::Bool:
-          return (float) (((const char *) data)[entry]);
+          return data[entry];
 
         // 4 bytes
         case VarDataType::Int32:
         case VarDataType::Bitmask:
-          return static_cast<float>(((const int *) data)[entry]);
+          return static_cast<float>(reinterpret_cast<const int*>(data)[entry]);
 
         case VarDataType::Float:
-          return (float) (((const float *) data)[entry]);
+          return reinterpret_cast<const float*>(data)[entry];
 
         // 8 bytes
         case VarDataType::Double:
-          return static_cast<float>(((const double *) data)[entry]);
+          return static_cast<float>(reinterpret_cast<const double*>(data)[entry]);
       }
     }
 
@@ -285,19 +288,19 @@ namespace IRacingSDK {
         // 1 byte
         case VarDataType::Char:
         case VarDataType::Bool:
-          return (double) (((const char *) data)[entry]);
+          return data[entry];
 
         // 4 bytes
         case VarDataType::Int32:
         case VarDataType::Bitmask:
-          return (double) (((const int *) data)[entry]);
+          return reinterpret_cast<const int*>(data)[entry];
 
         case VarDataType::Float:
-          return (double) (((const float *) data)[entry]);
+          return reinterpret_cast<const float*>(data)[entry];
 
         // 8 bytes
         case VarDataType::Double:
-          return (double) (((const double *) data)[entry]);
+          return reinterpret_cast<const double*>(data)[entry];
       }
     }
 
@@ -344,7 +347,7 @@ namespace IRacingSDK {
         
         if (data) {          
           sessionInfo_.first = count;
-          sessionInfoStr_ = std::make_optional<std::string_view>(data);
+          sessionInfoStr_ = std::make_optional<std::string>(data);
           auto rootNode = YAML::Load(data);
           if (!sessionInfo_.second) {
             sessionInfo_.second = std::make_shared<SessionInfo::SessionInfoMessage>();
@@ -370,7 +373,7 @@ namespace IRacingSDK {
    *
    * @return
    */
-  Expected<std::string_view> LiveClient::getSessionInfoStr() {
+  Expected<std::string> LiveClient::getSessionInfoStr() {
     std::scoped_lock lock(sessionInfoMutex_);
     if (!isConnected())
       return std::unexpected(GeneralError("LiveClient is not connected"));
@@ -404,27 +407,27 @@ namespace IRacingSDK {
     return sessionSampleCount_;
   }
 
-  Opt<double> LiveClient::getVarDouble(const std::string_view &name, uint32_t entry) {
+  Opt<double> LiveClient::getVarDouble(const std::string &name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res ? getVarDouble(res.value(), entry) : std::nullopt;
   }
-  Opt<float> LiveClient::getVarFloat(const std::string_view &name, uint32_t entry) {
+  Opt<float> LiveClient::getVarFloat(const std::string &name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res ? getVarFloat(res.value(), entry) : std::nullopt;
   }
-  Opt<int> LiveClient::getVarInt(const std::string_view &name, uint32_t entry) {
+  Opt<int> LiveClient::getVarInt(const std::string &name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res ? getVarInt(res.value(), entry) : std::nullopt;
   }
-  Opt<bool> LiveClient::getVarBool(const std::string_view &name, uint32_t entry) {
+  Opt<bool> LiveClient::getVarBool(const std::string &name, uint32_t entry) {
     auto res = getVarIdx(name);
     return res ? getVarBool(res.value(), entry) : std::nullopt;
   }
-  Opt<uint32_t> LiveClient::getVarCount(const std::string_view &name) {
+  Opt<uint32_t> LiveClient::getVarCount(const std::string &name) {
     auto res = getVarIdx(name);
     return res ? getVarCount(res.value()) : std::nullopt;
   }
-  Opt<VarDataType> LiveClient::getVarType(const std::string_view &name) {
+  Opt<VarDataType> LiveClient::getVarType(const std::string &name) {
     auto res = getVarIdx(name);
     return res ? getVarType(res.value()) : std::nullopt;
   }
@@ -433,20 +436,20 @@ namespace IRacingSDK {
     return LiveClientId;
   }
 
-  std::optional<std::string_view> LiveClient::getVarName(uint32_t idx) {
+  std::optional<std::string> LiveClient::getVarName(uint32_t idx) {
     if (auto varHeader = getVarHeader(idx)) {
       return varHeader.value()->name;
     }
     return std::nullopt;
   }
-  std::optional<std::string_view> LiveClient::getVarDesc(uint32_t idx) {
+  std::optional<std::string> LiveClient::getVarDesc(uint32_t idx) {
     auto varHeader = getVarHeader(idx);
     if (varHeader) {
       return varHeader.value()->desc;
     }
     return std::nullopt;
   }
-  std::optional<std::string_view> LiveClient::getVarUnit(uint32_t idx) {
+  std::optional<std::string> LiveClient::getVarUnit(uint32_t idx) {
     auto varHeader = getVarHeader(idx);
     if (varHeader) {
       return varHeader.value()->unit;
@@ -483,7 +486,7 @@ namespace IRacingSDK {
   bool LiveClient::isAvailable() {
     return isConnected();
   }
-  Opt<const VarDataHeader *> LiveClient::getVarHeader(const std::string_view &name) {
+  Opt<std::shared_ptr<const VarDataHeader>> LiveClient::getVarHeader(const std::string &name) {
     auto res = getVarIdx(name);
     return res ? getVarHeader(res.value()) : std::nullopt;
   }
