@@ -27,9 +27,12 @@ IF(NOT TARGET Microsoft::CppWinRT)
   FOREACH(depPkgName ${DEP_PACKAGES})
     FIND_PACKAGE(${depPkgName} CONFIG REQUIRED)
   ENDFOREACH()
+
+  FIND_PACKAGE(ICU REQUIRED COMPONENTS uc i18n data)
 ENDIF()
 
 # Create Similar Aliases for each Dependency
+SET(DEP_ICU ICU::uc ICU::i18n ICU::data)
 SET(DEP_YAML yaml-cpp::yaml-cpp)
 SET(DEP_JSON nlohmann_json::nlohmann_json)
 SET(DEP_MAGICENUM magic_enum::magic_enum)
@@ -47,6 +50,7 @@ SET(ALL_APP_DEPS
   ${DEP_YAML}
   ${DEP_GSL}
   ${DEP_SYS_WINMM}
+  ${DEP_ICU}
 )
 
 SET(ALL_SDK_DEPS
@@ -56,6 +60,7 @@ SET(ALL_SDK_DEPS
   ${DEP_YAML}
   ${DEP_LOG}
   ${DEP_SYS_WINMM}
+  ${DEP_ICU}
 )
 
 FUNCTION(IRSDKCPP_TARGET_LINK_SDK_LIBS TARGET)

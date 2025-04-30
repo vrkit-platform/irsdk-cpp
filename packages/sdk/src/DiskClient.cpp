@@ -116,7 +116,7 @@ namespace IRacingSDK {
           }
 
 
-          auto& yamlStr = yamlStrRes.value();
+          auto yamlStr = Utils::ConvertISO88591ToUTF8(yamlStrRes.value());
           L->debug("Added session info override @ {}tk in ({}) session info overrides", tick, f.string());
           extras.sessionInfoTickQueue.emplace_back(tick, f.string(), yamlStr);
         } catch (std::runtime_error err) {
@@ -263,8 +263,7 @@ namespace IRacingSDK {
     }
 
     if (hasSessionInfoFileOverride()) {
-    std:
-      int32_t tickCount = 0;
+      std::int32_t tickCount = 0;
       if (!isAvailable()) {
         L->warn("Disk client is not yet ready, using defacto first session info override");
       } else {
@@ -365,53 +364,6 @@ namespace IRacingSDK {
       L->error(msg);
       return std::unexpected(GeneralError(ErrorCode::General, msg));
     }
-
-
-    //
-    // if (!data || !sessionLength) {
-    //   return std::unexpected(GeneralError(ErrorCode::General, "data or session length is invalid"));
-    // }
-    //
-    // auto parseYaml = [&] () -> std::expected<bool, GeneralError> {
-    //   try {
-    //     auto rootNode = YAML::Load(data);
-    //
-    //     if (!sessionInfo_.second) {
-    //       sessionInfo_.second = std::make_shared<SessionInfo::SessionInfoMessage>();
-    //       sessionInfo_.first = 1;
-    //     }
-    //
-    //     SessionInfo::SessionInfoMessage* sessionInfo = sessionInfo_.second.get();
-    //     *sessionInfo = rootNode.as<SessionInfo::SessionInfoMessage>();
-    //     return true;
-    //   } catch (const YAML::ParserException& ex) {
-    //     auto msg = std::format("ParserException: Failed to parse session info: {}", ex.what());
-    //     L->error(msg);
-    //     return std::unexpected(GeneralError(ErrorCode::General, msg));
-    //   } catch (const YAML::Exception& ex) {
-    //     auto msg = std::format("Failed to parse session info: {}", ex.what());
-    //     L->error(msg);
-    //     return std::unexpected(GeneralError(ErrorCode::General, msg));
-    //   } catch (...) {
-    //     auto msg = std::format("Failed to parse session info: UNKNOWN");
-    //     L->error(msg);
-    //     return std::unexpected(GeneralError(ErrorCode::General, msg));
-    //   }
-    // };
-    //
-    // char dataTerm = data[sessionLength - 1];
-    // data[sessionLength - 1] = '\0';
-    // for (std::size_t idx = 0; idx < 2; idx ++) {
-    //   if (idx == 1) {
-    //     data[sessionLength - 1] = dataTerm;
-    //   }
-    //
-    //   auto res = parseYaml();
-    //   if (res.has_value() || idx == 1) {
-    //     return res;
-    //   }
-    // }
-
 
   }
 

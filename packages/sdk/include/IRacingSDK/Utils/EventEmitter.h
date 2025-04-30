@@ -71,10 +71,10 @@ namespace IRacingSDK::Utils {
       };
     }
 
-    void unsubscribe(auto key) {
+    void unsubscribe(int key) {
       std::scoped_lock lock(subscriptionMutex_);
       // std::erase_if(subscriptions_,[key] (auto& holder) {
-      //     return key == holder.key;
+      //   return key == holder.key;
       // });
     }
 

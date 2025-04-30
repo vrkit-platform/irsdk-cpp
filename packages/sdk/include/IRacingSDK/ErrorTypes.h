@@ -34,7 +34,7 @@ namespace IRacingSDK {
         virtual ErrorCode code() {
             return code_;
         };
-        
+
     protected:
         ErrorCode code_{ErrorCode::General};
     };

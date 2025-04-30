@@ -4,9 +4,9 @@
 
 #pragma once
 
+
 #include <algorithm>
 #include <string>
-
 
 namespace IRacingSDK::Utils::Strings {
     constexpr std::string toLowerCase(std::string s) {
@@ -17,4 +17,6 @@ namespace IRacingSDK::Utils::Strings {
         );
         return s;
     }
+
+
 }

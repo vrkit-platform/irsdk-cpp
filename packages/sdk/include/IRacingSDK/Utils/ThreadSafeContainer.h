@@ -22,14 +22,12 @@ namespace IRacingSDK::Utils {
       explicit ThreadSafeContainer(T&& value) : data_(std::move(value)) {
       }
 
-      // Getter - returns a SharedGuard with shared lock
-      [[nodiscard]] std::unique_ptr<SharedGuard> get() const {
-        return std::make_unique<SharedGuard>(*this);
+      [[nodiscard]] SharedGuard readonly() const {
+        return SharedGuard(*this);
       }
 
-      // Setter - returns a MutationGuard with exclusive lock
-      [[nodiscard]] std::unique_ptr<MutationGuard> set() {
-        return std::make_unique<MutationGuard>(*this);
+      [[nodiscard]] MutationGuard mutate() {
+        return MutationGuard(*this);
       }
 
     private:
