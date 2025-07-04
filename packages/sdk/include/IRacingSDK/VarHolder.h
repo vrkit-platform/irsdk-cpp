@@ -14,8 +14,8 @@ namespace IRacingSDK {
     class VarHolder {
     public:
         VarHolder() = delete;
-        explicit VarHolder(const std::string_view& name, ClientProvider* clientProvider = nullptr);
-        explicit VarHolder(KnownVarName name, ClientProvider* clientProvider = nullptr);
+        explicit VarHolder(const std::string_view& name, std::shared_ptr<ClientProvider> clientProvider = nullptr);
+        explicit VarHolder(KnownVarName name, std::shared_ptr<ClientProvider> clientProvider = nullptr);
 
         void setVarName(const std::string_view& name);
 
@@ -62,6 +62,6 @@ namespace IRacingSDK {
         int32_t idx_{0};
         std::optional<ClientId> clientId_{};
 
-        ClientProvider* clientProvider_;
+        std::shared_ptr<ClientProvider> clientProvider_;
     };
 }

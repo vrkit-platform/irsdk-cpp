@@ -1,0 +1,247 @@
+//
+// Created by jglanz on 4/19/2024.
+//
+
+
+#include <conio.h>
+#include <csignal>
+#include <cstdio>
+#include <ctime>
+
+#include <IRacingSDK/DiskClient.h>
+#include <IRacingSDK/DiskClientDataFrameProcessor.h>
+#include <IRacingSDK/LiveConnection.h>
+#include <IRacingSDK/Utils/ConsoleHelpers.h>
+
+#include "CommonMacros.h"
+#include "FakeLiveClientSharedMemoryServer.h"
+
+namespace IRacingSDK::Examples {
+  using namespace IRacingSDK;
+  using namespace IRacingSDK::Utils;
+
+  namespace {
+    auto L = std::make_shared<spdlog::logger>("FakeLiveClientSharedMemoryServer");
+
+    template <typename U = std::chrono::milliseconds, typename Clock = std::chrono::steady_clock>
+    U TimeEpoch() {
+      return std::chrono::duration_cast<U>(
+        Clock::now().time_since_epoch());
+    }
+
+  } // namespace
+
+  void FakeLiveClientSharedMemoryServer::run() {
+    auto &diskClient = diskClient_;
+    bool isFirst = true;
+
+    // CALCULATED REQUIRED SHARED MEMORY SIZE
+    // AND CREATE OBJECTS
+    auto sessionInfoStr = std::string{diskClient.getSessionInfoStr().value()};
+    sessionInfoStr.data()[sessionInfoStr.length() - 1] = '\0';
+
+    auto sessionInfoStrSize = static_cast<uint32_t>(sessionInfoStr.length());
+
+    auto headers = diskClient.getVarHeaders();
+    auto headerCount = headers.size();
+    auto headerBufferSize = headerCount * sizeof(VarDataHeader);
+
+    std::size_t varBufferSize = 0;
+    for (auto &header : headers) {
+      varBufferSize += VarDataTypeSizeTable[header.type] * header.count;
+    }
+
+    std::size_t varBufferCount = Resources::MaxBufferCount;
+    std::size_t varBufferTotalSize = varBufferCount * varBufferSize;
+
+    DWORD memMapBufferSizeWithoutSessionInfo = DataHeaderSize + headerBufferSize + varBufferTotalSize;
+    DWORD memMapBufferSize = memMapBufferSizeWithoutSessionInfo + sessionInfoStrSize;
+    HANDLE memMapFileHandle = CreateFileMapping(
+      INVALID_HANDLE_VALUE,
+      nullptr,
+      PAGE_READWRITE,
+      0,
+      memMapBufferSize,
+      Resources::MemMapFilename);
+    std::atomic_int lastTickCount = INT_MAX;
+
+
+    auto sharedMemPtr = static_cast<char *>(MapViewOfFile(
+      memMapFileHandle,
+      FILE_MAP_ALL_ACCESS,
+      0,
+      0,
+      memMapBufferSize));
+
+    IRSDKCPP_LOG_AND_FATAL_IF(!sharedMemPtr, "Unable to create dataValidEventHandle");
+
+    DataHeader dataHeader{
+      .ver = Resources::Version,
+      .status = ConnectionStatus::Connected,
+      .tickRate = 60,
+      .session = DataHeader::SessionDetails{
+        .count = 1,
+        .len = sessionInfoStrSize,
+        .offset = static_cast<uint32_t>(memMapBufferSizeWithoutSessionInfo)},
+      .numVars = static_cast<int>(headerCount),
+      .varHeaderOffset = static_cast<int>(DataHeaderSize),
+
+      .numBuf = static_cast<int>(varBufferCount),
+      .bufLen = static_cast<int>(varBufferSize),
+
+    };
+
+    std::size_t varBufferOffset = DataHeaderSize + headerBufferSize;
+    for (auto idx = 0; idx < varBufferCount; idx++) {
+      // Create data buf desc
+      dataHeader.varBuf[idx] = VarDataBufDescriptor{
+        .tickCount = 0,
+        .bufOffset = static_cast<int>(varBufferOffset + (varBufferSize * idx))};
+    }
+    //= reinterpret_cast<const DataHeader*>(sharedMemPtr);
+
+    auto dataValidEventHandle = CreateEvent(NULL, false, false, Resources::DataValidEventName);
+    IRSDKCPP_LOG_AND_FATAL_IF(!dataValidEventHandle, "Unable to create dataValidEventHandle");
+
+    int varBufIdx = 0;
+
+    auto getVarBuffer = [&](int idx) {
+      IRSDKCPP_LOG_AND_FATAL_IF(idx >= varBufferCount, "Invalid index");
+      return static_cast<char *>(sharedMemPtr + varBufferOffset + (idx * varBufferSize));
+    };
+
+
+    CopyMemory(sharedMemPtr + dataHeader.varHeaderOffset, static_cast<void *>(headers.data()), headerBufferSize);
+
+    auto nextDataFrame = [&]() -> bool {
+      std::scoped_lock lock(mutex_);
+
+      if (!diskClient.next()) {
+        L->debug("Reached last sample {} of {}", diskClient.getSampleIndex(), diskClient.getSampleCount());
+        return false;
+      }
+
+      if (isFirst)
+        isFirst = false;
+
+      IRSDKCPP_LOG_AND_FATAL_IF(!diskClient.copyDataVariableBuffer(getVarBuffer(varBufIdx), varBufferSize), "Unable to copy data variable buffer");
+
+      auto tickOpt = diskClient.getVarInt("SessionTick");
+      IRSDKCPP_LOG_AND_FATAL_IF(!tickOpt, "Unable to get session tick variable");
+
+      dataHeader.varBuf[varBufIdx].tickCount = tickOpt.value();
+
+      varBufIdx++;
+      if (varBufIdx >= varBufferCount) {
+        varBufIdx = 0;
+      }
+
+      return true;
+    };
+
+    std::size_t frameCount = 0;
+    while (true) {
+      ResetEvent(dataValidEventHandle);
+
+      if (!running_)
+        break;
+
+
+      if (isFirst && !nextDataFrame()) {
+        break;
+      }
+
+      // Grab the tick count from the header, which was
+      // updated in `nextDataFrame()`
+      auto sessionTickCount = dataHeader.varBuf[varBufIdx].tickCount;
+
+      // Copy all changed data to the shared memory buffer
+      CopyMemory(sharedMemPtr, &dataHeader, DataHeaderSize);
+      CopyMemory(sharedMemPtr + dataHeader.session.offset, sessionInfoStr.data(), dataHeader.session.len);
+
+      SetEvent(dataValidEventHandle);
+
+      auto currentTimeMillis = TimeEpoch();
+
+      // auto posCountRes = diskClient.getVarCount(KnownVarName::CarIdxPosition);
+      auto currentSessionTimeVal = diskClient.getVarDouble(KnownVarName::SessionTime);
+
+      IRSDKCPP_LOG_AND_FATAL_IF(!currentSessionTimeVal, "No session time");
+      auto currentSessionTime = currentSessionTimeVal.value();
+      auto currentSessionTimeMillis = IRacingSDK::Utils::SessionTimeToMillis(currentSessionTime);
+
+
+      if (!nextDataFrame()) {
+        if (running_) {
+          L->info("Reached the last sample, resetting to the first of {}", diskClient.getSampleCount());
+        }
+        break;
+      }
+
+      auto nextSessionTimeVal = diskClient.getVarDouble(KnownVarName::SessionTime);
+      IRSDKCPP_LOG_AND_FATAL_IF(!nextSessionTimeVal, "No next session time");
+      auto nextSessionTime = nextSessionTimeVal.value();
+      auto nextSessionTimeMillis = IRacingSDK::Utils::SessionTimeToMillis(nextSessionTime);
+
+      auto dataFrameIntervalMillis = std::chrono::milliseconds(nextSessionTimeMillis - currentSessionTimeMillis);
+      auto nextTimeMillis = currentTimeMillis + dataFrameIntervalMillis;
+      std::chrono::steady_clock::time_point nextTime{nextTimeMillis};
+
+      auto nowTime = std::chrono::steady_clock::now();
+      auto intervalDuration = nextTime - nowTime;
+      if (frameCount % 600 == 0) {
+        std::cerr << std::format("FrameCount={},SessionTick={},SessionTime={},NextFrameWait={}ms", frameCount, sessionTickCount, currentSessionTime, duration_cast<std::chrono::milliseconds>(intervalDuration).count()) << std::endl;
+      }
+
+      {
+        std::unique_lock threadLock(mutex_);
+        sleepCondition_.wait_for(
+          threadLock,
+          intervalDuration,
+          [&] {
+            return !running_;
+          });
+      }
+
+      frameCount++;
+    }
+
+    CloseHandle(dataValidEventHandle);
+
+    UnmapViewOfFile(sharedMemPtr);
+    CloseHandle(memMapFileHandle);
+  }
+
+  FakeLiveClientSharedMemoryServer::FakeLiveClientSharedMemoryServer(const fs::path &ibtPath) :
+      diskClient_(ibtPath, ibtPath.string()),
+      ibtPath_{ibtPath},
+      thread_(
+        std::make_unique<std::thread>(
+          &FakeLiveClientSharedMemoryServer::run,
+          this)) {
+      };
+
+  /**
+   * @brief Wait for thread to complete
+   */
+  void FakeLiveClientSharedMemoryServer::waitFor() {
+    if (thread_ && thread_->joinable()) {
+      thread_->join();
+    }
+  }
+
+  /**
+   * @brief Destroy the tool
+   */
+  void FakeLiveClientSharedMemoryServer::destroy() {
+    std::scoped_lock lock(mutex_);
+    if (!running_.exchange(false)) {
+      return;
+    }
+
+    sleepCondition_.notify_all();
+    waitFor();
+  }
+
+
+} // namespace IRacingSDK::Examples

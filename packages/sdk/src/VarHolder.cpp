@@ -37,13 +37,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning(disable : 4996)
 namespace IRacingSDK {
   using namespace Utils;
-  //----------------------------------
 
-  VarHolder::VarHolder(const std::string_view &name, ClientProvider *clientProvider) : clientProvider_(clientProvider) {
+  //----------------------------------
+  VarHolder::VarHolder(const std::string_view &name, std::shared_ptr<ClientProvider> clientProvider) : clientProvider_(clientProvider) {
     setVarName(name);
   }
 
-  VarHolder::VarHolder(KnownVarName name, ClientProvider* clientProvider) : VarHolder{KnownVarNameToStringView(name), clientProvider} {
+  VarHolder::VarHolder(KnownVarName name, std::shared_ptr<ClientProvider>clientProvider) : VarHolder{KnownVarNameToStringView(name), clientProvider} {
   }
 
   void VarHolder::setVarName(const std::string_view &name) {

@@ -62,6 +62,8 @@ namespace IRacingSDK {
      */
     struct Extras {
       std::vector<SessionInfoFileOverride> sessionInfoTickQueue{};
+
+      Extras() {};
     };
     static std::shared_ptr<DiskClient> CreateForRaceRecording(const std::string& path);
 

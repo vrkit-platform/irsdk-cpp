@@ -583,36 +583,7 @@ namespace {
             driver.gapToLeader,
             driver.gapToLeaderF2, driver.lapTimeLast, driver.lapTimeCurrent);
         }
-        // printf(" %2d %2d %10s %3s %7.3f %2d %2d %2d %6.3f %2d %8.2f %5.2f %2d %2d %2d %2d %7.3f %7.3f %7.3f %7.3f %2d %d %2d "
-        //        "%2d %2d 0x%02x\n",
-        //        driver.position,
-        //        idx,
-        //        gLapTimingData.drivers[idx].driverName,
-        //        gLapTimingData.drivers[idx].carNumStr,
-        //        gCarIdxEstTime.getFloat(idx),
-        //        gCarIdxGear.getInt(idx),
-        //        gCarIdxLap.getInt(idx),
-        //        gCarIdxLapCompleted.getInt(idx),
-        //        gCarIdxLapDistPct.getFloat(idx),
-        //        gCarIdxOnPitRoad.getBool(idx),
-        //        gCarIdxRPM.getFloat(idx),
-        //        gCarIdxSteer.getFloat(idx),
-        //        gCarIdxTrackSurface.getInt(idx),
-        //        gCarIdxTrackSurfaceMaterial.getInt(idx),
-        //        gCarIdxPosition.getInt(idx),
-        //        gCarIdxClassPosition.getInt(idx),
-        //        gCarIdxF2Time.getFloat(idx),
-        //        //****Note, don't use this one any more, it is replaced by CarIdxLastLapTime
-        //        gLapTimingData.drivers[idx].lapTimeLast,
-        //        // new variables, check if they exist on members
-        //        (gCarIdxLastLapTime.isValid()) ? gCarIdxLastLapTime.getFloat(idx) : -1,
-        //        (gCarIdxBestLapTime.isValid()) ? gCarIdxBestLapTime.getFloat(idx) : -1,
-        //        (gCarIdxBestLapNum.isValid()) ? gCarIdxBestLapNum.getInt(idx) : -1,
-        //        (gCarIdxP2P_Status.isValid()) ? gCarIdxP2P_Status.getBool(idx) : -1,
-        //        (gCarIdxP2P_Count.isValid()) ? gCarIdxP2P_Count.getInt(idx) : -1,
-        //        (gCarIdxPaceLine.isValid()) ? gCarIdxPaceLine.getInt(idx) : -1,
-        //        (gCarIdxPaceRow.isValid()) ? gCarIdxPaceRow.getInt(idx) : -1,
-        //        (gCarIdxPaceFlags.isValid()) ? gCarIdxPaceFlags.getInt(idx) : -1);
+
         linesUsed++;
       }
     }

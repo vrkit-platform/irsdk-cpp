@@ -7,10 +7,13 @@
 #include <algorithm>
 #include <atomic>
 #include <functional>
+#include <iterator>
 #include <mutex>
 #include <vector>
 
 namespace IRacingSDK::Utils {
+
+  using EventEmitterUnsubscribeFn = std::function<void()>;
 
   template <typename... Args>
   class EventEmitter {
@@ -33,13 +36,9 @@ namespace IRacingSDK::Utils {
       friend bool operator!=(const Subscription& lhs, const Subscription& rhs) {
         return !(lhs == rhs);
       }
-
-      // Subscription(const Subscription& other) = delete;
-      // Subscription(Subscription&& other) noexcept = delete;
-
     };
 
-    using UnsubscribeFn = std::function<void()>;
+    using UnsubscribeFn = EventEmitterUnsubscribeFn;
     using Subscriptions = std::vector<Subscription>;
 
     EventEmitter() = default;
