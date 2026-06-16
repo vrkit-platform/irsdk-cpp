@@ -2,7 +2,7 @@
 #include <IRacingSDK/Utils/Singleton.h>
 #include <IRacingSDK/Utils/Traits.h>
 #include <gtest/gtest.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 using namespace IRacingSDK::Utils;
 

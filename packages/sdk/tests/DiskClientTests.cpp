@@ -11,7 +11,7 @@
 #include <IRacingSDK/Utils/FileHelpers.h>
 #include <IRacingSDK/Utils/SDKMacros.h>
 #include <IRacingSDK/VarHolder.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <gsl/util>
 #include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
