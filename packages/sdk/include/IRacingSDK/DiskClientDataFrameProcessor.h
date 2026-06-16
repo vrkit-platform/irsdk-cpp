@@ -1,7 +1,7 @@
 #pragma once
 
 #include <filesystem>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <IRacingSDK/DiskClient.h>
 #include <IRacingSDK/LogInstance.h>
 #include <IRacingSDK/Utils/ChronoHelpers.h>

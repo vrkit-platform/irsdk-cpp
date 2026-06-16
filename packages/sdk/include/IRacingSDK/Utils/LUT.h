@@ -4,7 +4,7 @@
 #include <functional>
 #include <stdexcept>
 #include <utility>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace IRacingSDK::Utils {
 template<typename T, typename K>
