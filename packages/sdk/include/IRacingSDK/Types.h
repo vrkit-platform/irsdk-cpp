@@ -724,7 +724,16 @@ namespace IRacingSDK {
     CarIdxSteer,
     CarIdxTrackSurface,
   };
+}
 
+// KnownVarName has more values than the default magic_enum range [-128, 127].
+template <>
+struct magic_enum::customize::enum_range<IRacingSDK::KnownVarName> {
+  static constexpr int min = 0;
+  static constexpr int max = 255;
+};
+
+namespace IRacingSDK {
   /**
    * @brief An iterable list of `KnownVarName` values represented as their
    * respective name
